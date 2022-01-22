@@ -101,6 +101,14 @@ namespace SkylessAPI.Utilities
         }
         #endregion
 
+        #region Dictionary Extensions
+        /// <summary>
+        /// Moves all key-value pairs from one dictionary into another, overwriting duplicate keys in the original.
+        /// </summary>
+        public static void Merge<TKey, TValue>(this Dictionary<TKey, TValue> dictTo, Dictionary<TKey, TValue> dictFrom) =>
+            dictFrom.ToList().ForEach(delegate (KeyValuePair<TKey, TValue> item) { dictTo[item.Key] = item.Value; });
+        #endregion
+
         #region String Extensions
         /// <summary>
         /// Faster implementation of the String.Contains() method, because why not.

@@ -1,5 +1,8 @@
 ﻿using BepInEx;
+using BinarySerializer;
 using Failbetter.Core;
+using Failbetter.Core.DataInterfaces;
+using Failbetter.Data;
 using HarmonyLib;
 using Il2CppSystem.Linq;
 using Newtonsoft.Json;
@@ -10,116 +13,162 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
+using UnhollowerRuntimeLib;
 using UnityEngine;
 using Event = Failbetter.Core.Event;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace SkylessAPI
 {
     public static class AddonAPI
     {
-        private static HashSet<SkylessAddon> Addons;
+        private static readonly Dictionary<string, (AddonManifest Manifest, string Directory)> Addons 
+            = new Dictionary<string, (AddonManifest Manifest, string Directory)>();
+        
         private static bool _loaded;
-
         public static bool Loaded
         {
             get => _loaded;
             internal set => _loaded = value;
         }
 
-        [InvokeOnStart]
         private static void Load()
         {
-            SkylessAPI.Logging.LogDebug("Loaded AddonAPI");
-            SkylessAPI.Harmony.Patch(typeof(RepositoryManager).GetMethod(nameof(RepositoryManager.InitialiseForResources)), 
-                postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(InitializeAddonRepos), BindingFlags.Static | BindingFlags.NonPublic)));
+            //SkylessAPI.Harmony.Patch(typeof(RepositoryManager).GetMethod(nameof(RepositoryManager.InitialiseForResources)), 
+            //    postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(InitializeAddonRepos), BindingFlags.Static | BindingFlags.NonPublic)));
+            SkylessAPI.Harmony.Patch(typeof(BinarySerializer_Event).GetMethod(nameof(BinarySerializer_Event.DeserializeCollection)),
+                postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Event_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
+            SkylessAPI.Logging.LogInfo("Loaded AddonAPI");
+            _loaded = true;
         }
 
-        private static void InitializeAddonRepos(RepositoryManager __instance)
+        [InvokeOnStart]
+        private static void CheckForAddons()
         {
+            // Initialize addon list and get directories which contain an addon manifest
+            List<(AddonManifest Manifest, string)> addons = new List<(AddonManifest, string)>();
+            var directories = Directory.GetFiles(Paths.PluginPath, "manifest.json", SearchOption.AllDirectories)
+                .Select(a => Path.GetDirectoryName(a)).Concat(Directory.GetFiles(Application.persistentDataPath, "manifest.json", SearchOption.AllDirectories)
+                    .Select(a => Path.GetDirectoryName(a))).ToHashSet();
 
-        }
+            // Try to deserialize addon manifests
+            foreach (string directory in directories)
+            {
+                string path = Path.Combine(directory, "manifest.json");
+                try {
+                    addons.Add((JsonSerializer.Deserialize<AddonManifest>(File.ReadAllText(Path.Combine(directory, "manifest.json"))), directory));
+                }
+                catch (Exception e) {
+                    SkylessAPI.Logging.LogError($"Could not deserialize {path}, addon will not be loaded");
+                    SkylessAPI.Logging.LogDebug(e);
+                }
+            }
 
-        private static void DeserializeAddons()
-        {
-            var directories = Directory.GetFiles(Paths.PluginPath, "metadata.json", SearchOption.AllDirectories)
-                .Select(a => Path.GetDirectoryName(a)).Concat(Directory.GetFiles(Application.persistentDataPath, "metadata.json", SearchOption.AllDirectories)
-                    .Select(a => Path.GetDirectoryName(a))).ToList();
-
-            foreach (string directory in directories) Addons.Add(new SkylessAddon(directory));
-
-            Addons = Addons.GroupBy(
+            // Resolve version conflicts if there are multiple versions of the same addon present, only keeping the newest
+            addons = addons.GroupBy(
                 addon => addon.Manifest.Guid,
                 addon => addon,
                 (guid, versions) => versions.OrderByDescending(v => v.Manifest.Version).First()
-            ).ToHashSet();
-        }
+            ).ToList();
 
-        private static void DeserializeJson<T>(string directory, string file, ref Il2CppSystem.Collections.Generic.Dictionary<int, T> entities) where T : Entity
-        {
-            var values = JsonConvert.DeserializeObject<Il2CppSystem.Collections.Generic.IEnumerable<T>>(Path.Combine(directory, file));
-            Func<T, int> key = x => x.Id;
-            Func<T, T> value = x => x;
-            entities = Il2CppSystem.Linq.Enumerable.ToDictionary<T, int, T>(values, key, value);
-        }
-
-        public class SkylessAddon
-        {
-            // todo: separate out deserialization into a method which merges it with main repositories on the fly
-            // storing separate collections for each plugin is pointless, idk why I did this, this class is useless
-            // only AddonManifest is required for what I want to do
-            public SkylessAddon(string directory)
+            // Only hook necessary methods if there are addons present
+            if (addons.Count > 0)
             {
-                foreach (string file in Directory.GetFiles(directory))
-                {
-                    if (file.FastContains("areas.json") && Areas == null)
-                        DeserializeJson(directory, "areas.json", ref Areas);
-                    else if (file.FastContains("bargains.json") && Bargains == null)
-                        DeserializeJson(directory, "bargains.json", ref Bargains);
-                    else if (file.FastContains("domiciles.json") && Domiciles == null)
-                        DeserializeJson(directory, "domiciles.json", ref Domiciles);
-                    else if (file.FastContains("events.json") && Events == null)
-                        DeserializeJson(directory, "events.json", ref Events);
-                    else if (file.FastContains("exchanges.json") && Exchanges == null)
-                        DeserializeJson(directory, "exchanges.json", ref Exchanges);
-                    else if (file.FastContains("personas.json") && Personas == null)
-                        DeserializeJson(directory, "personas.json", ref Personas);
-                    else if (file.FastContains("prospects.json") && Prospects == null)
-                        DeserializeJson(directory, "prospects.json", ref Prospects);
-                    else if (file.FastContains("qualities.json") && Qualities == null)
-                        DeserializeJson(directory, "qualities.json", ref Qualities);
-                    else if (file.FastContains("settings.json") && Settings == null)
-                        DeserializeJson(directory, "settings.json", ref Settings);
-                }
+                foreach ((AddonManifest Manifest, string) addon in addons)
+                    Addons[addon.Manifest.Guid] = addon;
+                Load();
+            }
+        }
 
-                Manifest = JsonConvert.DeserializeObject<AddonManifest>(Path.Combine(directory, "metadata.json"));
+        private static Il2CppSystem.Collections.Generic.List<Event> Event_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Event> __result)
+        {
+            var moddedList = new Il2CppSystem.Collections.Generic.List<Event>();
+            var tempDict = new Dictionary<int, Event>();
+
+            for (int i = 0; i < __result.Count; i++)
+            {
+                tempDict[__result[i].Id] = __result[i];
             }
 
-            public Il2CppSystem.Collections.Generic.Dictionary<int, Area> Areas;
-            public Il2CppSystem.Collections.Generic.Dictionary<int, Bargain> Bargains;
-            public Il2CppSystem.Collections.Generic.Dictionary<int, Domicile> Domiciles;
-            public Il2CppSystem.Collections.Generic.Dictionary<int, Event> Events;
-            public Il2CppSystem.Collections.Generic.Dictionary<int, Exchange> Exchanges;
-            public Il2CppSystem.Collections.Generic.Dictionary<int, Persona> Personas;
-            public Il2CppSystem.Collections.Generic.Dictionary<int, Prospect> Prospects;
-            public Il2CppSystem.Collections.Generic.Dictionary<int, Quality> Qualities;
-            public Il2CppSystem.Collections.Generic.Dictionary<int, Setting> Settings;
-            public AddonManifest Manifest;
+            foreach (KeyValuePair<string, (AddonManifest Manifest, string Directory)> addonInfo in Addons)
+            {
+                string directory = addonInfo.Value.Directory;
+                foreach (string file in Directory.GetFiles(addonInfo.Value.Directory))
+                {
+                    string filename = Path.GetFileName(file);
+                    if (filename == "events.json")
+                    {
+                        var modEvents = JsonConvert.DeserializeObject<Il2CppSystem.Collections.Generic.List<Event>>(File.ReadAllText(Path.Combine(directory, "events.json")));
+                        for (int i = 0; i < modEvents.Count; i++)
+                            tempDict[modEvents[i].Id] = modEvents[i];
+                    }
+                }
+            }
+
+            foreach (KeyValuePair<int, Event> item in tempDict)
+                moddedList.Add(item.Value);
+
+            return moddedList;
+        }
+
+        //private static void InitializeAddonRepos(RepositoryManager __instance)
+        //{
+        //    foreach (KeyValuePair<string, (AddonManifest Manifest, string Directory)> addonInfo in Addons)
+        //    {
+        //        string directory = addonInfo.Value.Directory;
+        //        foreach (string file in Directory.GetFiles(addonInfo.Value.Directory))
+        //        {
+        //            string filename = Path.GetFileName(file);
+        //            if (filename == "areas.json")
+        //                __instance._areaRepository.Cast<AreaRepository>().Entities.Merge(DeserializeJson<Area>(Path.Combine(directory, "areas.json")));
+        //            else if (filename == "bargains.json")
+        //                __instance._bargainRepository.Cast<BargainRepository>().Entities.Merge(DeserializeJson<Bargain>(Path.Combine(directory, "bargains.json")));
+        //            else if (filename == "domiciles.json")
+        //                __instance._domicileRepository.Cast<DomicileRepository>().Entities.Merge(DeserializeJson<Domicile>(Path.Combine(directory, "domiciles.json")));
+        //            else if (filename == "events.json")
+        //                __instance._eventRepository.Cast<EventRepository>().Entities.Merge(DeserializeJson<Event>(Path.Combine(directory, "events.json")));
+        //            else if (filename == "exchanges.json")
+        //                __instance._exchangeRepository.Cast<ExchangeRepository>().Entities.Merge(DeserializeJson<Exchange>(Path.Combine(directory, "exchanges.json")));
+        //            else if (filename == "personas.json")
+        //                __instance._personaRepository.Cast<PersonaRepository>().Entities.Merge(DeserializeJson<Persona>(Path.Combine(directory, "personas.json")));
+        //            else if (filename == "prospects.json")
+        //                __instance._prospectRepository.Cast<ProspectRepository>().Entities.Merge(DeserializeJson<Prospect>(Path.Combine(directory, "prospects.json")));
+        //            else if (filename == "qualities.json")
+        //                __instance._qualityRepository.Cast<QualityRepository>().Entities.Merge(DeserializeJson<Quality>(Path.Combine(directory, "qualities.json")));
+        //            else if (filename == "settings.json")
+        //                __instance._settingRepository.Cast<SettingRepository>().Entities.Merge(DeserializeJson<Setting>(Path.Combine(directory, "settings.json")));
+        //        }
+        //    }
+        //}
+
+        private static Il2CppSystem.Collections.Generic.Dictionary<int, T> DeserializeJson<T>(string path) where T : Entity
+        {
+            try {
+                var values = JsonConvert.DeserializeObject<Il2CppSystem.Collections.Generic.IEnumerable<T>>(File.ReadAllText(path));
+                Func<T, int> key = x => x.Id;
+                Func<T, T> value = x => x;
+                return Il2CppSystem.Linq.Enumerable.ToDictionary<T, int, T>(values, key, value);
+            }
+            catch (Exception e) {
+                SkylessAPI.Logging.LogError($"Could not deserialize {path}");
+                SkylessAPI.Logging.LogDebug(e);
+                return null;
+            }
         }
 
         public class AddonManifest
         {
-            public AddonManifest(string guid, string version, string[] updateKeys)
+            public AddonManifest(string Guid, string Version, string[] UpdateKeys)
             {
-                Guid = guid;
-                Version = version;
-                UpdateKeys = updateKeys;
+                this.Guid = Guid;
+                this.Version = Version;
+                this.UpdateKeys = UpdateKeys;
             }
 
-            public readonly string Guid;
-            public readonly string Version;
-            internal string[] UpdateKeys;
+            public string Guid { get; internal set; }
+            public string Version { get; internal set; }
+            public string[] UpdateKeys { get; internal set; }
         }
     }
 }

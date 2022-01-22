@@ -6,5 +6,6 @@ namespace SkylessAPI.Utilities
 {
     public static class Il2CppClassExtensions
     {
+        
     }
 }

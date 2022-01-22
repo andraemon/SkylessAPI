@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Reflection;
-using BepInEx;
+﻿using BepInEx;
 using BepInEx.IL2CPP;
 using BepInEx.Logging;
-using SkylessAPI.Utilities;
-using Skyless.Assets.Code.Skyless.Utilities.Serialization;
-using UnhollowerRuntimeLib;
-using UnityEngine;
 using HarmonyLib;
+using Newtonsoft.Json;
+using SkylessAPI.Utilities;
+using System.IO;
+using static SkylessAPI.AddonAPI;
 
 namespace SkylessAPI
 {
@@ -30,9 +24,8 @@ namespace SkylessAPI
 
         public override void Load()
         {
-            Logging.LogDebug("SkylessAPI loaded successfully");
             StartupHelper.CallInvokeOnStart();
-            Logging.LogDebug(Paths.PluginPath);
+            Logging.LogInfo("SkylessAPI loaded successfully");
         }
     }
 }
