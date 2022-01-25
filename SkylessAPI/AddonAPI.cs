@@ -23,8 +23,18 @@ namespace SkylessAPI
 {
     public static class AddonAPI
     {
-        private static readonly Dictionary<string, (AddonManifest Manifest, string Directory)> Addons 
-            = new Dictionary<string, (AddonManifest Manifest, string Directory)>();
+        private static readonly Dictionary<string, AddonInfo> Addons = new Dictionary<string, AddonInfo>();
+        private static readonly string[] RepoNames = new string[] { 
+            "areas.json", 
+            "bargains.json", 
+            "domiciles.json", 
+            "events.json", 
+            "exchanges.json", 
+            "personas.json", 
+            "prospects.json", 
+            "qualities.json", 
+            "settings.json" 
+        };
         
         private static bool _loaded;
         public static bool Loaded
@@ -35,34 +45,43 @@ namespace SkylessAPI
 
         private static void Load()
         {
-            //SkylessAPI.Harmony.Patch(typeof(RepositoryManager).GetMethod(nameof(RepositoryManager.InitialiseForResources)), 
-            //    postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(InitializeAddonRepos), BindingFlags.Static | BindingFlags.NonPublic)));
+            SkylessAPI.Harmony.Patch(typeof(BinarySerializer_Area).GetMethod(nameof(BinarySerializer_Area.DeserializeCollection)),
+                 postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Area_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic))); 
+            SkylessAPI.Harmony.Patch(typeof(BinarySerializer_Bargain).GetMethod(nameof(BinarySerializer_Bargain.DeserializeCollection)),
+                 postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Bargain_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
+            SkylessAPI.Harmony.Patch(typeof(BinarySerializer_Domicile).GetMethod(nameof(BinarySerializer_Domicile.DeserializeCollection)),
+                postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Domicile_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
             SkylessAPI.Harmony.Patch(typeof(BinarySerializer_Event).GetMethod(nameof(BinarySerializer_Event.DeserializeCollection)),
                 postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Event_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
+            SkylessAPI.Harmony.Patch(typeof(BinarySerializer_Exchange).GetMethod(nameof(BinarySerializer_Exchange.DeserializeCollection)),
+                postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Exchange_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
+            SkylessAPI.Harmony.Patch(typeof(BinarySerializer_Persona).GetMethod(nameof(BinarySerializer_Persona.DeserializeCollection)),
+                postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Persona_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
+            SkylessAPI.Harmony.Patch(typeof(BinarySerializer_Prospect).GetMethod(nameof(BinarySerializer_Prospect.DeserializeCollection)),
+                postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Prospect_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
+            SkylessAPI.Harmony.Patch(typeof(BinarySerializer_Quality).GetMethod(nameof(BinarySerializer_Quality.DeserializeCollection)),
+                postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Quality_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
+            SkylessAPI.Harmony.Patch(typeof(BinarySerializer_Setting).GetMethod(nameof(BinarySerializer_Setting.DeserializeCollection)),
+                postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Setting_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
             SkylessAPI.Logging.LogInfo("Loaded AddonAPI");
             _loaded = true;
         }
 
         [InvokeOnStart]
-        private static void CheckForAddons()
+        private static void RegisterAddons()
         {
             // Initialize addon list and get directories which contain an addon manifest
-            List<(AddonManifest Manifest, string)> addons = new List<(AddonManifest, string)>();
+            List<AddonInfo> addons = new List<AddonInfo>();
             var directories = Directory.GetFiles(Paths.PluginPath, "manifest.json", SearchOption.AllDirectories)
                 .Select(a => Path.GetDirectoryName(a)).Concat(Directory.GetFiles(Application.persistentDataPath, "manifest.json", SearchOption.AllDirectories)
                     .Select(a => Path.GetDirectoryName(a))).ToHashSet();
 
-            // Try to deserialize addon manifests
+            // Try to construct addon info, only registering if manifest is valid
             foreach (string directory in directories)
             {
-                string path = Path.Combine(directory, "manifest.json");
-                try {
-                    addons.Add((JsonSerializer.Deserialize<AddonManifest>(File.ReadAllText(Path.Combine(directory, "manifest.json"))), directory));
-                }
-                catch (Exception e) {
-                    SkylessAPI.Logging.LogError($"Could not deserialize {path}, addon will not be loaded");
-                    SkylessAPI.Logging.LogDebug(e);
-                }
+                var addon = new AddonInfo(directory);
+                if (addon.Manifest != null && !addon.Manifest.Guid.IsNullOrWhiteSpace() && !addon.Manifest.Version.IsNullOrWhiteSpace())
+                    addons.Add(addon);
             }
 
             // Resolve version conflicts if there are multiple versions of the same addon present, only keeping the newest
@@ -75,80 +94,76 @@ namespace SkylessAPI
             // Only hook necessary methods if there are addons present
             if (addons.Count > 0)
             {
-                foreach ((AddonManifest Manifest, string) addon in addons)
+                foreach (AddonInfo addon in addons)
                     Addons[addon.Manifest.Guid] = addon;
                 Load();
             }
         }
 
-        private static Il2CppSystem.Collections.Generic.List<Event> Event_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Event> __result)
-        {
-            var moddedList = new Il2CppSystem.Collections.Generic.List<Event>();
-            var tempDict = new Dictionary<int, Event>();
+        #region Postfixes
+        private static Il2CppSystem.Collections.Generic.List<Area> Area_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Area> __result) =>
+            QuickMergeAddonRepos(__result, "areas.json");
 
-            for (int i = 0; i < __result.Count; i++)
+        private static Il2CppSystem.Collections.Generic.List<Bargain> Bargain_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Bargain> __result) =>
+            QuickMergeAddonRepos(__result, "bargains.json");
+
+        private static Il2CppSystem.Collections.Generic.List<Domicile> Domicile_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Domicile> __result) =>
+            QuickMergeAddonRepos(__result, "domiciles.json");
+
+        private static Il2CppSystem.Collections.Generic.List<Event> Event_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Event> __result) =>
+            QuickMergeAddonRepos(__result, "events.json");
+
+        private static Il2CppSystem.Collections.Generic.List<Exchange> Exchange_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Exchange> __result) =>
+            QuickMergeAddonRepos(__result, "exchanges.json");
+
+        private static Il2CppSystem.Collections.Generic.List<Persona> Persona_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Persona> __result) =>
+            QuickMergeAddonRepos(__result, "personas.json");
+
+        private static Il2CppSystem.Collections.Generic.List<Prospect> Prospect_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Prospect> __result) =>
+            QuickMergeAddonRepos(__result, "prospects.json");
+
+        private static Il2CppSystem.Collections.Generic.List<Quality> Quality_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Quality> __result) =>
+            QuickMergeAddonRepos(__result, "qualities.json");
+
+        private static Il2CppSystem.Collections.Generic.List<Setting> Setting_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.List<Setting> __result) =>
+            QuickMergeAddonRepos(__result, "settings.json");
+        #endregion
+
+        private static Il2CppSystem.Collections.Generic.List<T> QuickMergeAddonRepos<T>(Il2CppSystem.Collections.Generic.List<T> repo, string slug) where T : Entity
+        {
+            var moddedList = new Il2CppSystem.Collections.Generic.List<T>();
+            var tempDict = new Dictionary<int, T>();
+
+            for (int i = 0; i < repo.Count; i++)
             {
-                tempDict[__result[i].Id] = __result[i];
+                tempDict[repo[i].Id] = repo[i];
             }
 
-            foreach (KeyValuePair<string, (AddonManifest Manifest, string Directory)> addonInfo in Addons)
+            foreach (AddonInfo addonInfo in Addons.Values)
             {
-                string directory = addonInfo.Value.Directory;
-                foreach (string file in Directory.GetFiles(addonInfo.Value.Directory))
+                string directory = addonInfo.Directory;
+                if (addonInfo.Repos.Contains(slug))
                 {
-                    string filename = Path.GetFileName(file);
-                    if (filename == "events.json")
-                    {
-                        var modEvents = JsonConvert.DeserializeObject<Il2CppSystem.Collections.Generic.List<Event>>(File.ReadAllText(Path.Combine(directory, "events.json")));
-                        for (int i = 0; i < modEvents.Count; i++)
-                            tempDict[modEvents[i].Id] = modEvents[i];
-                    }
+                    var modEvents = JsonConvert.DeserializeObject<Il2CppSystem.Collections.Generic.List<T>>(File.ReadAllText(Path.Combine(directory, slug)));
+                    for (int i = 0; i < modEvents.Count; i++)
+                        tempDict[modEvents[i].Id] = modEvents[i];
                 }
             }
 
-            foreach (KeyValuePair<int, Event> item in tempDict)
+            foreach (KeyValuePair<int, T> item in tempDict)
                 moddedList.Add(item.Value);
 
             return moddedList;
         }
 
-        //private static void InitializeAddonRepos(RepositoryManager __instance)
-        //{
-        //    foreach (KeyValuePair<string, (AddonManifest Manifest, string Directory)> addonInfo in Addons)
-        //    {
-        //        string directory = addonInfo.Value.Directory;
-        //        foreach (string file in Directory.GetFiles(addonInfo.Value.Directory))
-        //        {
-        //            string filename = Path.GetFileName(file);
-        //            if (filename == "areas.json")
-        //                __instance._areaRepository.Cast<AreaRepository>().Entities.Merge(DeserializeJson<Area>(Path.Combine(directory, "areas.json")));
-        //            else if (filename == "bargains.json")
-        //                __instance._bargainRepository.Cast<BargainRepository>().Entities.Merge(DeserializeJson<Bargain>(Path.Combine(directory, "bargains.json")));
-        //            else if (filename == "domiciles.json")
-        //                __instance._domicileRepository.Cast<DomicileRepository>().Entities.Merge(DeserializeJson<Domicile>(Path.Combine(directory, "domiciles.json")));
-        //            else if (filename == "events.json")
-        //                __instance._eventRepository.Cast<EventRepository>().Entities.Merge(DeserializeJson<Event>(Path.Combine(directory, "events.json")));
-        //            else if (filename == "exchanges.json")
-        //                __instance._exchangeRepository.Cast<ExchangeRepository>().Entities.Merge(DeserializeJson<Exchange>(Path.Combine(directory, "exchanges.json")));
-        //            else if (filename == "personas.json")
-        //                __instance._personaRepository.Cast<PersonaRepository>().Entities.Merge(DeserializeJson<Persona>(Path.Combine(directory, "personas.json")));
-        //            else if (filename == "prospects.json")
-        //                __instance._prospectRepository.Cast<ProspectRepository>().Entities.Merge(DeserializeJson<Prospect>(Path.Combine(directory, "prospects.json")));
-        //            else if (filename == "qualities.json")
-        //                __instance._qualityRepository.Cast<QualityRepository>().Entities.Merge(DeserializeJson<Quality>(Path.Combine(directory, "qualities.json")));
-        //            else if (filename == "settings.json")
-        //                __instance._settingRepository.Cast<SettingRepository>().Entities.Merge(DeserializeJson<Setting>(Path.Combine(directory, "settings.json")));
-        //        }
-        //    }
-        //}
-
-        private static Il2CppSystem.Collections.Generic.Dictionary<int, T> DeserializeJson<T>(string path) where T : Entity
+        private static List<T> DeserializeRepo<T>(string path)
         {
             try {
-                var values = JsonConvert.DeserializeObject<Il2CppSystem.Collections.Generic.IEnumerable<T>>(File.ReadAllText(path));
-                Func<T, int> key = x => x.Id;
-                Func<T, T> value = x => x;
-                return Il2CppSystem.Linq.Enumerable.ToDictionary<T, int, T>(values, key, value);
+                var values = JsonConvert.DeserializeObject<Il2CppSystem.Collections.Generic.List<T>>(File.ReadAllText(path));
+                var list = new List<T>();
+                for (int i = 0; i < values.Count; i++)
+                    list.Add(values[i]);
+                return list;
             }
             catch (Exception e) {
                 SkylessAPI.Logging.LogError($"Could not deserialize {path}");
@@ -157,7 +172,37 @@ namespace SkylessAPI
             }
         }
 
-        public class AddonManifest
+        internal class AddonInfo
+        {
+            public AddonInfo(string directory)
+            {
+                Directory = directory;
+                Repos = new List<string>();
+                
+                string manifestPath = Path.Combine(directory, "manifest.json");
+                try {
+                    Manifest = JsonSerializer.Deserialize<AddonManifest>(File.ReadAllText(manifestPath));
+                }
+                catch (Exception e) {
+                    Manifest = null;
+                    SkylessAPI.Logging.LogError($"Could not deserialize {manifestPath}, addon will not be loaded");
+                    SkylessAPI.Logging.LogDebug(e);
+                }
+
+                foreach (string file in System.IO.Directory.GetFiles(directory))
+                {
+                    var filename = Path.GetFileName(file);
+                    if (RepoNames.Contains(filename))
+                        Repos.Add(filename);
+                }
+            }
+
+            public List<string> Repos;    
+            public AddonManifest Manifest;
+            public string Directory { get; internal set; }
+        }
+
+        internal class AddonManifest
         {
             public AddonManifest(string Guid, string Version, string[] UpdateKeys)
             {
@@ -165,7 +210,7 @@ namespace SkylessAPI
                 this.Version = Version;
                 this.UpdateKeys = UpdateKeys;
             }
-
+            
             public string Guid { get; internal set; }
             public string Version { get; internal set; }
             public string[] UpdateKeys { get; internal set; }

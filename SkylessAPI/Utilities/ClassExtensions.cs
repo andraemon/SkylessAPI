@@ -78,6 +78,19 @@ namespace SkylessAPI.Utilities
         }
         #endregion
 
+        #region IList Extensions
+        /// <summary>
+        /// Converts an <see cref="IList{T}"/> to a <see cref="Il2CppSystem.Collections.Generic.IList{T}"/>.
+        /// </summary>
+        public static Il2CppSystem.Collections.Generic.IList<T> ToIl2CppList<T>(this IList<T> list) where T : Il2CppSystem.Object
+        {
+            var ilList = new Il2CppSystem.Collections.Generic.List<T>();
+            for (int i = 0; i < list.Count; i++)
+                ilList.Add(list[i]);
+            return ilList.TryCast<Il2CppSystem.Collections.Generic.IList<T>>();
+        }
+        #endregion
+
         #region List Extensions
         /// <summary>
         /// Searches for elements which match the conditions defined by the specified predicate, 
