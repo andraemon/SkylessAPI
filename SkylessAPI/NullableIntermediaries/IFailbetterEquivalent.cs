@@ -12,5 +12,7 @@ namespace SkylessAPI.NullableIntermediaries
         TIl2Cpp ToIL2Cpp();
         
         IFailbetterEquivalent<TIl2Cpp> FromIL2Cpp(TIl2Cpp entity);
+
+        int Id { get; set; }
     }
 }

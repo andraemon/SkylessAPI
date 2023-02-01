@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SkylessAPI.NullableIntermediaries
 {
-    internal class BargainNullable : IHasId, IFailbetterEquivalent<Bargain>
+    internal class BargainNullable : IFailbetterEquivalent<Bargain>
     {
 		#region Interface Methods
 		public Bargain ToIL2Cpp() =>
@@ -18,9 +18,9 @@ namespace SkylessAPI.NullableIntermediaries
 				Tags = Tags,
 				Description = Description,
 				Offer = Offer,
-				Stock = Stock ?? default,
+				Stock = Stock.GetValueOrDefault(),
 				Price = Price,
-				QualitiesRequired = QualitiesRequired.ToIl2CppList(),
+				QualitiesRequired = null, // QualitiesRequired.ToIl2CppIList(PUT FUNCTION HERE),
 				Name = Name,
 				Id = Id
 			};
@@ -36,7 +36,7 @@ namespace SkylessAPI.NullableIntermediaries
 				Offer = bargain.Offer,
 				Stock = bargain.Stock,
 				Price = bargain.Price,
-				QualitiesRequired = bargain.QualitiesRequired.ToManagedList(),
+				QualitiesRequired = null, // bargain.QualitiesRequired.ToManagedIList(PUT FUNCTION HERE),
 				Name = bargain.Name,
 				Id = bargain.Id
 			};

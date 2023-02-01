@@ -59,8 +59,8 @@
     <Reference Include="Il2CppSystem.Xml">
       <HintPath>..\Libs\Il2CppSystem.Xml.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.6.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=7.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.7.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>..\Libs\Mono.Cecil.dll</HintPath>
@@ -74,16 +74,25 @@
     <Reference Include="Mono.Cecil.Rocks">
       <HintPath>..\Libs\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libs\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Rewired_Core, Version=3.7.1.6, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libs\Rewired_Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Rewired_Windows, Version=3.7.1.6, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libs\Rewired_Windows.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
-    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
     </Reference>
     <Reference Include="System.Numerics" />
     <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -92,11 +101,11 @@
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
-    <Reference Include="System.Text.Encodings.Web, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Text.Encodings.Web.6.0.0\lib\net461\System.Text.Encodings.Web.dll</HintPath>
+    <Reference Include="System.Text.Encodings.Web, Version=7.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encodings.Web.7.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
     </Reference>
-    <Reference Include="System.Text.Json, Version=6.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Text.Json.6.0.1\lib\net461\System.Text.Json.dll</HintPath>
+    <Reference Include="System.Text.Json, Version=7.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Json.7.0.1\lib\net462\System.Text.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
@@ -134,23 +143,64 @@
     <Reference Include="UnityEngine.UIModule">
       <HintPath>..\Libs\UnityEngine.UIModule.dll</HintPath>
     </Reference>
-    <Reference Include="Zenject">
+    <Reference Include="Zenject, Version=3.7.1.6, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libs\Zenject.dll</HintPath>
+    </Reference>
+    <Reference Include="Zenject-usage, Version=3.7.1.6, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libs\Zenject-usage.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AddonAPI.cs" />
-    <Compile Include="ModInterop\PluginManager.cs" />
+    <Compile Include="ModInterop\Mergers\AreaMerger.cs" />
+    <Compile Include="ModInterop\Mergers\AspectQPossessionMerger.cs" />
+    <Compile Include="ModInterop\Mergers\AvailabilityMerger.cs" />
+    <Compile Include="ModInterop\Mergers\BargainMerger.cs" />
+    <Compile Include="ModInterop\Mergers\BargainQRequirementMerger.cs" />
+    <Compile Include="ModInterop\Mergers\BaseQEffectMerger.cs" />
+    <Compile Include="ModInterop\Mergers\BaseQPossessionMerger.cs" />
+    <Compile Include="ModInterop\Mergers\BaseQRequirementMerger.cs" />
+    <Compile Include="ModInterop\Mergers\BranchMerger.cs" />
+    <Compile Include="ModInterop\Mergers\BranchQRequirementMerger.cs" />
+    <Compile Include="ModInterop\Mergers\CompletionMerger.cs" />
+    <Compile Include="ModInterop\Mergers\CompletionQEffectMerger.cs" />
+    <Compile Include="ModInterop\Mergers\CompletionQRequirementMerger.cs" />
+    <Compile Include="ModInterop\Mergers\DeckMerger.cs" />
+    <Compile Include="ModInterop\Mergers\DomicileMerger.cs" />
+    <Compile Include="ModInterop\Mergers\EventMerger.cs" />
+    <Compile Include="ModInterop\Mergers\EventQEffectMerger.cs" />
+    <Compile Include="ModInterop\Mergers\EventQRequirementMerger.cs" />
+    <Compile Include="ModInterop\Mergers\ExchangeMerger.cs" />
+    <Compile Include="ModInterop\Mergers\IMerger.cs" />
+    <Compile Include="ModInterop\Mergers\PersonaMerger.cs" />
+    <Compile Include="ModInterop\Mergers\PersonaQEffectMerger.cs" />
+    <Compile Include="ModInterop\Mergers\PersonaQRequirementMerger.cs" />
+    <Compile Include="ModInterop\Mergers\ProspectMerger.cs" />
+    <Compile Include="ModInterop\Mergers\ProspectQEffectMerger.cs" />
+    <Compile Include="ModInterop\Mergers\ProspectQRequirementMerger.cs" />
+    <Compile Include="ModInterop\Mergers\QEnhancementMerger.cs" />
+    <Compile Include="ModInterop\Mergers\QualityMerger.cs" />
+    <Compile Include="ModInterop\Mergers\SettingMerger.cs" />
+    <Compile Include="ModInterop\Mergers\ShopMerger.cs" />
+    <Compile Include="ModInterop\Mergers\ShopQRequirementMerger.cs" />
+    <Compile Include="Utilities\PluginManager.cs" />
     <Compile Include="ModInterop\RepositoryMerger.cs" />
     <Compile Include="NullableIntermediaries\AreaNullable.cs" />
     <Compile Include="NullableIntermediaries\BargainNullable.cs" />
     <Compile Include="NullableIntermediaries\DomicileNullable.cs" />
-    <Compile Include="NullableIntermediaries\IHasId.cs" />
+    <Compile Include="NullableIntermediaries\EventNullable.cs" />
+    <Compile Include="NullableIntermediaries\ExchangeNullable.cs" />
     <Compile Include="NullableIntermediaries\IFailbetterEquivalent.cs" />
+    <Compile Include="NullableIntermediaries\PersonaNullable.cs" />
+    <Compile Include="NullableIntermediaries\ProspectNullable.cs" />
+    <Compile Include="NullableIntermediaries\QualityNullable.cs" />
+    <Compile Include="NullableIntermediaries\SettingNullable.cs" />
+    <Compile Include="ZenjectAPI.cs" />
     <Compile Include="SkylessAPI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utilities\ClassExtensions.cs" />
-    <Compile Include="Utilities\Il2CppClassExtensions.cs" />
+    <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Utilities\StartupHelper.cs" />
     <Compile Include="Utilities\SubmoduleManager.cs" />
   </ItemGroup>
@@ -161,11 +211,4 @@
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\Sunless Skies\BepInEx\plugins\exotico-SkylessAPI\"</PostBuildEvent>
   </PropertyGroup>
-  <Import Project="..\packages\System.Text.Json.6.0.1\build\System.Text.Json.targets" Condition="Exists('..\packages\System.Text.Json.6.0.1\build\System.Text.Json.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\System.Text.Json.6.0.1\build\System.Text.Json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Text.Json.6.0.1\build\System.Text.Json.targets'))" />
-  </Target>
 </Project>

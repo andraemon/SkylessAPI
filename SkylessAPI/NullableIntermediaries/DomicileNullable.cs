@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SkylessAPI.NullableIntermediaries
 {
-    internal class DomicileNullable : IHasId, IFailbetterEquivalent<Domicile>
+    internal class DomicileNullable : IFailbetterEquivalent<Domicile>
     {
 		#region Interface Methods
 		public Domicile ToIL2Cpp() =>
@@ -16,8 +16,8 @@ namespace SkylessAPI.NullableIntermediaries
 				Name = Name,
 				Description = Description,
 				ImageName = ImageName,
-				MaxHandSize = MaxHandSize ?? default,
-				DefenceBonus = DefenceBonus ?? default,
+				MaxHandSize = MaxHandSize.GetValueOrDefault(),
+				DefenceBonus = DefenceBonus.GetValueOrDefault(),
 				World = World,
 				Id = Id
 			};

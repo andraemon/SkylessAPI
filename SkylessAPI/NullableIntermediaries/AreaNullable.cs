@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SkylessAPI.NullableIntermediaries
 {
-    internal class AreaNullable : IHasId, IFailbetterEquivalent<Area>
+    internal class AreaNullable : IFailbetterEquivalent<Area>
     {
         #region Interface Methods
         public Area ToIL2Cpp() =>
@@ -16,14 +16,15 @@ namespace SkylessAPI.NullableIntermediaries
 				Description = Description,
 				ImageName = ImageName,
 				World = World,
-				MarketAccessPermitted = MarketAccessPermitted ?? default,
+				MarketAccessPermitted = MarketAccessPermitted.GetValueOrDefault(),
 				MoveMessage = MoveMessage,
-				HideName = HideName ?? default,
-				RandomPostcard = RandomPostcard ?? default,
-				MapX = MapX ?? default,
-				MapY = MapY ?? default,
-				ShowOps = ShowOps ?? default,
-				PremiumSubRequired = PremiumSubRequired ?? default,
+				HideName = HideName.GetValueOrDefault(),
+				RandomPostcard = RandomPostcard.GetValueOrDefault(),
+				MapX = MapX.GetValueOrDefault(),
+				MapY = MapY.GetValueOrDefault(),
+				UnlocksWithQuality = UnlocksWithQuality.ToIL2Cpp(),
+				ShowOps = ShowOps.GetValueOrDefault(),
+				PremiumSubRequired = PremiumSubRequired.GetValueOrDefault(),
 				Name = Name,
 				Id = Id
 			};
@@ -42,7 +43,7 @@ namespace SkylessAPI.NullableIntermediaries
 				RandomPostcard = area.RandomPostcard,
 				MapX = area.MapX,
 				MapY = area.MapY,
-				UnlocksWithQuality = area.UnlocksWithQuality,
+				UnlocksWithQuality = QualityNullable.FromIL2Cpp(area.UnlocksWithQuality),
 				ShowOps = area.ShowOps,
 				PremiumSubRequired = area.PremiumSubRequired,
 				Name = area.Name,
@@ -59,7 +60,7 @@ namespace SkylessAPI.NullableIntermediaries
 		public virtual bool? RandomPostcard { get; set; }
 		public virtual int? MapX { get; set; }
 		public virtual int? MapY { get; set; }
-		public virtual Quality UnlocksWithQuality { get; set; }
+		public virtual QualityNullable UnlocksWithQuality { get; set; }
 		public virtual bool? ShowOps { get; set; }
 		public virtual bool? PremiumSubRequired { get; set; }
 		public string Name { get; set; }
