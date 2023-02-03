@@ -37,8 +37,8 @@ namespace SkylessAPI.ModInterop.Mergers
                 associatedQuality = new Quality(assoc.Id(offset));
             }
 
-            baseQTo.MinAdvanced = (string)baseQFrom.GetPropertyValueOrDefault("MinAdvanced", baseQTo.MinAdvanced);
-            baseQTo.MaxAdvanced = (string)baseQFrom.GetPropertyValueOrDefault("MaxAdvanced", baseQTo.MaxAdvanced);
+            baseQTo.MinAdvanced = ((string)baseQFrom.GetPropertyValueOrDefault("MinAdvanced", baseQTo.MinAdvanced)).ReplaceModIDsInTokens(offset);
+            baseQTo.MaxAdvanced = ((string)baseQFrom.GetPropertyValueOrDefault("MaxAdvanced", baseQTo.MaxAdvanced)).ReplaceModIDsInTokens(offset);
             baseQTo.AssociatedQuality = associatedQuality;
         }
 

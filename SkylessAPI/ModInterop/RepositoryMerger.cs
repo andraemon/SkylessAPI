@@ -2,7 +2,6 @@
 using Failbetter.Core.DataInterfaces;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using SkylessAPI.NullableIntermediaries;
 using SkylessAPI.Utilities;
 using System;
 using System.Collections.Generic;
@@ -16,11 +15,6 @@ namespace SkylessAPI.ModInterop
 {
     internal static class RepositoryMerger
     {
-        // eventually this will merge entities instead of just overwriting them like in ssea
-        // also resolve id conflicts between addons
-        // todo also save the merged repos to disk so we don't have to do it every time the game starts
-        // use addon versioning to determine when repos need to be re-merged
-
         public static List<T> MergeOrLoadRepos<T>(this List<T> baseRepo, Mergers.IMerger<T> merger, string slug) where T : Entity
         {
             var jsonSlug = slug + ".json";
@@ -43,20 +37,24 @@ namespace SkylessAPI.ModInterop
 
             foreach (string guid in AddonAPI.LoadOrder)
             {
-                if (AddonAPI.Addons[guid].Repos.Contains(jsonSlug))
+                var addon = AddonAPI.Addons[guid];
+
+                if (addon.Repos.Contains(jsonSlug))
                 {
+                    var name = addon.Manifest.Name;
+
                     try
                     {
-                        SkylessAPI.Logging.LogDebug($"Merging {AddonAPI.GetName(guid)} {jsonSlug} to base...");
+                        SkylessAPI.Logging.LogDebug($"Merging {name} {jsonSlug} to base...");
                         var modRepo = JsonSerializer.Deserialize<List<JsonElement>>
-                            (File.ReadAllText(Path.Combine(AddonAPI.Addons[guid].Directory, jsonSlug)), AddonAPI.JsonOptions);
+                            (File.ReadAllText(Path.Combine(addon.Directory, jsonSlug)), AddonAPI.JsonOptions);
 
-                        baseRepo.MergeModRepoToBase(modRepo, merger, AddonAPI.GetOffset(guid));
-                        AddonAPI.Addons[guid].Loaded = true;
+                        baseRepo.MergeModRepoToBase(modRepo, merger, addon.IdOffset);
+                        addon.Loaded = true;
                     }
                     catch (Exception e)
                     {
-                        SkylessAPI.Logging.LogError($"Failed to load {AddonAPI.GetName(guid)} when processing {jsonSlug}!");
+                        SkylessAPI.Logging.LogError($"Failed to load {name} when processing {jsonSlug}!");
                         SkylessAPI.Logging.LogError(e);
                     }
                 }
@@ -67,7 +65,7 @@ namespace SkylessAPI.ModInterop
             return baseRepo;
         }
 
-        private static void MergeModRepoToBase<T>(this List<T> listTo, List<JsonElement> listFrom, Mergers.IMerger<T> merger, int offset) where T : Entity
+        public static void MergeModRepoToBase<T>(this List<T> listTo, List<JsonElement> listFrom, Mergers.IMerger<T> merger, int offset) where T : Entity
         {
             var dictTo = listTo.ToDictionary(s => s.Id);
 

@@ -13,16 +13,12 @@ using System.Threading.Tasks;
 
 namespace SkylessAPI
 {
+    /// <summary>
+    /// Provides access to dependencies injected with Zenject.
+    /// </summary>
     public static class ZenjectAPI
     {
         public static MasterInstaller Installer;
-
-        private static bool _loaded;
-        public static bool Loaded
-        {
-            get => _loaded;
-            internal set => _loaded = value;
-        }
 
         [InvokeOnStart]
         private static void Load()
@@ -34,7 +30,6 @@ namespace SkylessAPI
         private static void GetMasterInstaller(MasterInstaller __instance)
         {
             Installer = __instance;
-            _loaded = true;
         }
 
         /// <summary>

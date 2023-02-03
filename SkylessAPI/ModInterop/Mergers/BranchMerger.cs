@@ -31,14 +31,14 @@ namespace SkylessAPI.ModInterop.Mergers
             branchTo.RareSuccessEventChance = (int)branchFrom.GetPropertyValueOrDefault("RareSuccessEventChance", branchTo.RareSuccessEventChance);
             branchTo.QualitiesRequired = qualitiesRequired;
             branchTo.Image = (string)branchFrom.GetPropertyValueOrDefault("Image", branchTo.Image);
-            branchTo.Description = (string)branchFrom.GetPropertyValueOrDefault("Description", branchTo.Description);
+            branchTo.Description = ((string)branchFrom.GetPropertyValueOrDefault("Description", branchTo.Description)).ReplaceModIDsInTokens(offset);
             branchTo.OwnerName = (string)branchFrom.GetPropertyValueOrDefault("OwnerName", branchTo.OwnerName);
             branchTo.CurrencyCost = (int)branchFrom.GetPropertyValueOrDefault("CurrencyCost", branchTo.CurrencyCost);
             branchTo.Archived = (bool)branchFrom.GetPropertyValueOrDefault("Archived", branchTo.Archived);
             branchTo.ButtonText = (string)branchFrom.GetPropertyValueOrDefault("ButtonText", branchTo.ButtonText);
             branchTo.Ordering = (int)branchFrom.GetPropertyValueOrDefault("Ordering", branchTo.Ordering);
             branchTo.ActionCost = (int)branchFrom.GetPropertyValueOrDefault("ActionCost", branchTo.ActionCost);
-            branchTo.Name = (string)branchFrom.GetPropertyValueOrDefault("Name", branchTo.Name);
+            branchTo.Name = ((string)branchFrom.GetPropertyValueOrDefault("Name", branchTo.Name)).ReplaceModIDsInTokens(offset);
         }
 
         public Branch FromJsonElement(JsonElement item, int offset)
@@ -56,7 +56,7 @@ namespace SkylessAPI.ModInterop.Mergers
                 RareSuccessEventChance = (int)item.GetPropertyValueOrDefault("RareSuccessEventChance", 0),
                 QualitiesRequired = qualitiesRequired,
                 Image = (string)item.GetPropertyValueOrDefault("Image"),
-                Description = (string)item.GetPropertyValueOrDefault("Description"),
+                Description = ((string)item.GetPropertyValueOrDefault("Description")).ReplaceModIDsInTokens(offset),
                 OwnerName = (string)item.GetPropertyValueOrDefault("OwnerName"),
                 DateTimeCreated = Clock.Instance.Now(),
                 CurrencyCost = (int)item.GetPropertyValueOrDefault("CurrencyCost", 0),
@@ -64,7 +64,7 @@ namespace SkylessAPI.ModInterop.Mergers
                 ButtonText = (string)item.GetPropertyValueOrDefault("ButtonText"),
                 Ordering = (int)item.GetPropertyValueOrDefault("Ordering", 0),
                 ActionCost = (int)item.GetPropertyValueOrDefault("ActionCost", 0),
-                Name = (string)item.GetPropertyValueOrDefault("Name"),
+                Name = ((string)item.GetPropertyValueOrDefault("Name")).ReplaceModIDsInTokens(offset),
                 Id = item.Id(offset, false)
             };
         }

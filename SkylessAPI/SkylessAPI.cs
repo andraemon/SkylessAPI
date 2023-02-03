@@ -8,6 +8,7 @@ using Skyless.Assets.Code.Skyless.Game.Config;
 using SkylessAPI.Utilities;
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace SkylessAPI

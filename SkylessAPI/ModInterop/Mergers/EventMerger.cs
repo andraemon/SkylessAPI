@@ -147,7 +147,7 @@ namespace SkylessAPI.ModInterop.Mergers
             eventTo.QualitiesRequired = qualitiesRequired;
             eventTo.Image = (string)eventFrom.GetPropertyValueOrDefault("Image", eventTo.Image);
             eventTo.SecondImage = (string)eventFrom.GetPropertyValueOrDefault("SecondImage", eventTo.SecondImage);
-            eventTo.Description = (string)eventFrom.GetPropertyValueOrDefault("Description", eventTo.Description);
+            eventTo.Description = ((string)eventFrom.GetPropertyValueOrDefault("Description", eventTo.Description)).ReplaceModIDsInTokens(offset);
             eventTo.Tag = (string)eventFrom.GetPropertyValueOrDefault("Tag", eventTo.Tag);
             eventTo.ExoticEffects = (string)eventFrom.GetPropertyValueOrDefault("ExoticEffects", eventTo.ExoticEffects);
             eventTo.Note = (string)eventFrom.GetPropertyValueOrDefault("Note", eventTo.Note);
@@ -173,7 +173,7 @@ namespace SkylessAPI.ModInterop.Mergers
             eventTo.Distribution = (int)eventFrom.GetPropertyValueOrDefault("Distribution", eventTo.Distribution);
             eventTo.Autofire = (bool)eventFrom.GetPropertyValueOrDefault("Autofire", eventTo.Autofire);
             eventTo.CanGoBack = (bool)eventFrom.GetPropertyValueOrDefault("CanGoBack", eventTo.CanGoBack);
-            eventTo.Name = (string)eventFrom.GetPropertyValueOrDefault("Name", eventTo.Name);
+            eventTo.Name = ((string)eventFrom.GetPropertyValueOrDefault("Name", eventTo.Name)).ReplaceModIDsInTokens(offset);
         }
 
         public Event FromJsonElement(JsonElement item, int offset)
@@ -250,7 +250,7 @@ namespace SkylessAPI.ModInterop.Mergers
                 QualitiesRequired = qualitiesRequired,
                 Image = (string)item.GetPropertyValueOrDefault("Image"),
                 SecondImage = (string)item.GetPropertyValueOrDefault("SecondImage"),
-                Description = (string)item.GetPropertyValueOrDefault("Description"),
+                Description = ((string)item.GetPropertyValueOrDefault("Description")).ReplaceModIDsInTokens(offset),
                 Tag = (string)item.GetPropertyValueOrDefault("Tag"),
                 ExoticEffects = (string)item.GetPropertyValueOrDefault("ExoticEffects", ""),
                 Note = (string)item.GetPropertyValueOrDefault("Note"),
@@ -277,7 +277,7 @@ namespace SkylessAPI.ModInterop.Mergers
                 Distribution = (int)item.GetPropertyValueOrDefault("Distribution", 0),
                 Autofire = (bool)item.GetPropertyValueOrDefault("Autofire", true),
                 CanGoBack = (bool)item.GetPropertyValueOrDefault("CanGoBack", false),
-                Name = (string)item.GetPropertyValueOrDefault("Name"),
+                Name = ((string)item.GetPropertyValueOrDefault("Name")).ReplaceModIDsInTokens(offset),
                 Id = item.Id(offset, false)
             };
         }

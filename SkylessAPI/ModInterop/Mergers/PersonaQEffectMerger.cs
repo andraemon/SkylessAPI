@@ -39,10 +39,10 @@ namespace SkylessAPI.ModInterop.Mergers
             return new PersonaQEffect()
             {
                 ForceEquip = (bool)item.GetPropertyValueOrDefault("ForceEquip", false),
-                OnlyIfNoMoreThanAdvanced = (string)item.GetPropertyValueOrDefault("OnlyIfNoMoreThanAdvanced"),
-                SetToExactlyAdvanced = (string)item.GetPropertyValueOrDefault("SetToExactlyAdvanced"),
-                ChangeByAdvanced = (string)item.GetPropertyValueOrDefault("ChangeByAdvanced"),
-                OnlyIfAtLeastAdvanced = (string)item.GetPropertyValueOrDefault("OnlyIfAtLeastAdvanced"),
+                OnlyIfNoMoreThanAdvanced = ((string)item.GetPropertyValueOrDefault("OnlyIfNoMoreThanAdvanced")).ReplaceModIDsInTokens(offset),
+                SetToExactlyAdvanced = ((string)item.GetPropertyValueOrDefault("SetToExactlyAdvanced")).ReplaceModIDsInTokens(offset),
+                ChangeByAdvanced = ((string)item.GetPropertyValueOrDefault("ChangeByAdvanced")).ReplaceModIDsInTokens(offset),
+                OnlyIfAtLeastAdvanced = ((string)item.GetPropertyValueOrDefault("OnlyIfAtLeastAdvanced")).ReplaceModIDsInTokens(offset),
                 TargetQuality = targetQuality,
                 CompletionMessage = (string)item.GetPropertyValueOrDefault("CompletionMessage"),
                 Level = (int)item.GetPropertyValueOrDefault("Level", 0),

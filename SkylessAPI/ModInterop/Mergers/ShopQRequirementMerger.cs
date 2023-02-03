@@ -33,8 +33,8 @@ namespace SkylessAPI.ModInterop.Mergers
         {
             return new ShopQRequirement()
             {
-                MinAdvanced = (string)item.GetPropertyValueOrDefault("MinAdvanced"),
-                MaxAdvanced = (string)item.GetPropertyValueOrDefault("MaxAdvanced"),
+                MinAdvanced = ((string)item.GetPropertyValueOrDefault("MinAdvanced")).ReplaceModIDsInTokens(offset),
+                MaxAdvanced = ((string)item.GetPropertyValueOrDefault("MaxAdvanced")).ReplaceModIDsInTokens(offset),
                 AssociatedQuality = new Quality(item.GetProperty("AssociatedQuality").Id(offset)),
                 Id = item.Id(offset, false)
             };

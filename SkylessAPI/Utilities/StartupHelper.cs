@@ -12,7 +12,7 @@ namespace SkylessAPI.Utilities
 
     internal static class StartupHelper
     {
-        internal static void CallInvokeOnStart() =>
+        public static void CallInvokeOnStart() =>
             Assembly.GetExecutingAssembly().GetTypes().SelectMany(t => t.GetMethods(BindingFlags.Static | BindingFlags.NonPublic))
                 .Where(m => m.GetCustomAttribute(typeof(InvokeOnStart)) != null).ToList().ForEach(m => m.Invoke(null, null));
     }

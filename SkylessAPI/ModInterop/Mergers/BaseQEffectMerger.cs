@@ -55,10 +55,10 @@ namespace SkylessAPI.ModInterop.Mergers
                 associatedQuality = new Quality(assoc.Id(offset));
 
             baseQTo.ForceEquip = (bool)baseQFrom.GetPropertyValueOrDefault("ForceEquip", baseQTo.ForceEquip);
-            baseQTo.OnlyIfNoMoreThanAdvanced = (string)baseQFrom.GetPropertyValueOrDefault("OnlyIfNoMoreThanAdvanced", baseQTo.OnlyIfNoMoreThanAdvanced);
-            baseQTo.SetToExactlyAdvanced = (string)baseQFrom.GetPropertyValueOrDefault("SetToExactlyAdvanced", baseQTo.SetToExactlyAdvanced);
-            baseQTo.ChangeByAdvanced = (string)baseQFrom.GetPropertyValueOrDefault("ChangeByAdvanced", baseQTo.ChangeByAdvanced);
-            baseQTo.OnlyIfAtLeastAdvanced = (string)baseQFrom.GetPropertyValueOrDefault("OnlyIfAtLeastAdvanced", baseQTo.OnlyIfAtLeastAdvanced);
+            baseQTo.OnlyIfNoMoreThanAdvanced = ((string)baseQFrom.GetPropertyValueOrDefault("OnlyIfNoMoreThanAdvanced", baseQTo.OnlyIfNoMoreThanAdvanced)).ReplaceModIDsInTokens(offset);
+            baseQTo.SetToExactlyAdvanced = ((string)baseQFrom.GetPropertyValueOrDefault("SetToExactlyAdvanced", baseQTo.SetToExactlyAdvanced)).ReplaceModIDsInTokens(offset);
+            baseQTo.ChangeByAdvanced = ((string)baseQFrom.GetPropertyValueOrDefault("ChangeByAdvanced", baseQTo.ChangeByAdvanced)).ReplaceModIDsInTokens(offset);
+            baseQTo.OnlyIfAtLeastAdvanced = ((string)baseQFrom.GetPropertyValueOrDefault("OnlyIfAtLeastAdvanced", baseQTo.OnlyIfAtLeastAdvanced)).ReplaceModIDsInTokens(offset);
             baseQTo.TargetQuality = targetQuality;
             baseQTo.CompletionMessage = (string)baseQFrom.GetPropertyValueOrDefault("CompletionMessage", baseQTo.CompletionMessage);
             baseQTo.Level = (int)baseQFrom.GetPropertyValueOrDefault("Level", baseQTo.Level);

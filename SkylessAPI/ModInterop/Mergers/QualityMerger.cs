@@ -68,11 +68,11 @@ namespace SkylessAPI.ModInterop.Mergers
             qualityTo.RelationshipCapable = (bool)qualityFrom.GetPropertyValueOrDefault("RelationshipCapable", qualityTo.RelationshipCapable);
             qualityTo.PluralName = (string)qualityFrom.GetPropertyValueOrDefault("PluralName", qualityTo.PluralName);
             qualityTo.OwnerName = (string)qualityFrom.GetPropertyValueOrDefault("OwnerName", qualityTo.OwnerName);
-            qualityTo.Description = (string)qualityFrom.GetPropertyValueOrDefault("Description", qualityTo.Description);
+            qualityTo.Description = ((string)qualityFrom.GetPropertyValueOrDefault("Description", qualityTo.Description)).ReplaceModIDsInTokens(offset);
             qualityTo.Image = (string)qualityFrom.GetPropertyValueOrDefault("Image", qualityTo.Image);
             qualityTo.Notes = (string)qualityFrom.GetPropertyValueOrDefault("Notes", qualityTo.Notes);
             qualityTo.Tag = (string)qualityFrom.GetPropertyValueOrDefault("Tag", qualityTo.Tag);
-            qualityTo.CapAdvanced = (string)qualityFrom.GetPropertyValueOrDefault("CapAdvanced", qualityTo.CapAdvanced);
+            qualityTo.CapAdvanced = ((string)qualityFrom.GetPropertyValueOrDefault("CapAdvanced", qualityTo.CapAdvanced)).ReplaceModIDsInTokens(offset);
             qualityTo.HimbleLevel = (int)qualityFrom.GetPropertyValueOrDefault("HimbleLevel", qualityTo.HimbleLevel);
             qualityTo.UsePyramidNumbers = (bool)qualityFrom.GetPropertyValueOrDefault("UsePyramidNumbers", qualityTo.UsePyramidNumbers);
             qualityTo.PyramidNumberIncreaseLimit = (int)qualityFrom.GetPropertyValueOrDefault("PyramidNumberIncreaseLimit", qualityTo.PyramidNumberIncreaseLimit);
@@ -94,7 +94,7 @@ namespace SkylessAPI.ModInterop.Mergers
             qualityTo.AllowedOn = (QualityAllowedOn)qualityFrom.GetPropertyValueOrDefault("QualityAllowedOn", qualityTo.AllowedOn);
             qualityTo.Nature = (Nature)qualityFrom.GetPropertyValueOrDefault("Nature", qualityTo.Nature);
             qualityTo.Category = (Category)qualityFrom.GetPropertyValueOrDefault("Category", qualityTo.Category);
-            qualityTo.LevelDescriptionText = (string)qualityFrom.GetPropertyValueOrDefault("LevelDescriptionText", qualityTo.LevelDescriptionText);
+            qualityTo.LevelDescriptionText = ((string)qualityFrom.GetPropertyValueOrDefault("LevelDescriptionText", qualityTo.LevelDescriptionText)).ReplaceModIDsInTokens(offset);
             qualityTo.ChangeDescriptionText = (string)qualityFrom.GetPropertyValueOrDefault("ChangeDescriptionText", qualityTo.ChangeDescriptionText);
             qualityTo.DescendingChangeDescriptionText = (string)qualityFrom.GetPropertyValueOrDefault("DescendingChangeDescriptionText", qualityTo.DescendingChangeDescriptionText);
             qualityTo.LevelImageText = (string)qualityFrom.GetPropertyValueOrDefault("LevelImageText", qualityTo.LevelImageText);
@@ -128,11 +128,11 @@ namespace SkylessAPI.ModInterop.Mergers
                 RelationshipCapable = (bool)item.GetPropertyValueOrDefault("RelationshipCapable", false),
                 PluralName = (string)item.GetPropertyValueOrDefault("PluralName"),
                 OwnerName = (string)item.GetPropertyValueOrDefault("OwnerName", ""),
-                Description = (string)item.GetPropertyValueOrDefault("Description", ""),
+                Description = ((string)item.GetPropertyValueOrDefault("Description", "")).ReplaceModIDsInTokens(offset),
                 Image = (string)item.GetPropertyValueOrDefault("Image"),
                 Notes = (string)item.GetPropertyValueOrDefault("Notes"),
                 Tag = (string)item.GetPropertyValueOrDefault("Tag", ""),
-                CapAdvanced = (string)item.GetPropertyValueOrDefault("CapAdvanced"),
+                CapAdvanced = ((string)item.GetPropertyValueOrDefault("CapAdvanced")).ReplaceModIDsInTokens(offset),
                 HimbleLevel = (int)item.GetPropertyValueOrDefault("HimbleLevel", 0),
                 UsePyramidNumbers = (bool)item.GetPropertyValueOrDefault("UsePyramidNumbers", false),
                 PyramidNumberIncreaseLimit = (int)item.GetPropertyValueOrDefault("PyramidNumberIncreaseLimit", 50),
@@ -154,7 +154,7 @@ namespace SkylessAPI.ModInterop.Mergers
                 AllowedOn = (QualityAllowedOn)item.GetPropertyValueOrDefault("QualityAllowedOn", 0),
                 Nature = (Nature)item.GetPropertyValueOrDefault("Nature", 0),
                 Category = (Category)item.GetPropertyValueOrDefault("Category", 0),
-                LevelDescriptionText = (string)item.GetPropertyValueOrDefault("LevelDescriptionText"),
+                LevelDescriptionText = ((string)item.GetPropertyValueOrDefault("LevelDescriptionText")).ReplaceModIDsInTokens(offset),
                 ChangeDescriptionText = (string)item.GetPropertyValueOrDefault("ChangeDescriptionText"),
                 DescendingChangeDescriptionText = (string)item.GetPropertyValueOrDefault("DescendingChangeDescriptionText"),
                 LevelImageText = (string)item.GetPropertyValueOrDefault("LevelImageText"),

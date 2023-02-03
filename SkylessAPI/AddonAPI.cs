@@ -54,13 +54,6 @@ namespace SkylessAPI
             WriteIndented = true
         };
 
-        private static bool _loaded;
-        public static bool Loaded
-        {
-            get => _loaded;
-            private set => _loaded = value;
-        }
-
         private static void Load()
         {
             SkylessAPI.Harmony.Patch(typeof(BinarySerializationService).GetMethod(nameof(BinarySerializationService.DeserializeAreasFromResources)),
@@ -86,7 +79,6 @@ namespace SkylessAPI
                 prefix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(CleanupLineage), BindingFlags.Static | BindingFlags.NonPublic)));
 
             SkylessAPI.Logging.LogInfo("Loaded AddonAPI");
-            Loaded = true;
         }
 
         [InvokeOnStart]
@@ -308,32 +300,33 @@ namespace SkylessAPI
         /// </summary>
         /// <param name="guid">The GUID of the addon.</param>
         /// <param name="baseId">The original ID of the object.</param>
-        /// <returns>The actual ID of an added game object.</returns>
-        public static int ModId(string guid, int baseId) =>
-            baseId + Addons[guid].IdOffset;
+        /// <returns>The actual ID of an added game object, or -1 if the specified addon is not loaded.</returns>
+        public static int ModId(int baseId, string guid) =>
+            IsLoaded(guid) ? baseId + Addons[guid].IdOffset : -1;
+
+        /// <summary>
+        /// Gets the ID offset of an addon.
+        /// </summary>
+        /// <param name="guid">The GUID of the addon.</param>
+        /// <returns>The offset of addon, or -1 if the addon is not loaded.</returns>
+        public static int GetOffset(string guid)
+            => IsLoaded(guid) ? Addons[guid].IdOffset : -1;
 
         /// <summary>
         /// Gets the name of a mod by its GUID.
         /// </summary>
         /// <param name="guid">The GUID of the addon.</param>
-        /// <returns>The name of the addon, or null if no addon with the given GUID can be found.</returns>
+        /// <returns>The name of the addon, or null if the addon is not loaded.</returns>
         public static string GetName(string guid)
-            => Addons[guid].Manifest.Name;
+            => IsLoaded(guid) ? Addons[guid].Manifest.Name : null;
 
         /// <summary>
         /// Checks whether or not an addon is loaded.
         /// </summary>
         /// <param name="guid">The GUID of the addon.</param>
-        /// <returns>True if the addon is loaded; false if it's not or if no addon with the given GUID can be found.</returns>
+        /// <returns>True if the addon is loaded, false otherwise.</returns>
         public static bool IsLoaded(string guid)
-        {
-            if (Addons.TryGetValue(guid, out var info))
-                return info.Loaded;
-            return false;
-        }
-
-        internal static int GetOffset(string guid)
-            => Addons[guid].IdOffset;
+            => Addons.ContainsKey(guid);
 
         internal class AddonInfo
         {
@@ -435,9 +428,9 @@ namespace SkylessAPI
 
             public bool Validate()
             {
-                if (Guid.IsNullOrWhiteSpace() || Version == null) return false;
-                if (Dependencies == null) Dependencies = new string[0];
-                if (UpdateKeys == null) UpdateKeys = new string[0];
+                if (Guid.IsNullOrWhiteSpace() || Version.IsNullOrWhiteSpace()) return false;
+                if (Dependencies == null) Dependencies = Array.Empty<string>();
+                if (UpdateKeys == null) UpdateKeys = Array.Empty<string>();
                 return true;
             }
             

@@ -42,12 +42,12 @@ namespace SkylessAPI.ModInterop.Mergers
                 bargainFrom.GetPropertyOrDefault("QualitiesRequired"), BargainQRequirementMerger.Instance, offset).ToIList();
 
             bargainTo.Tags = (string)bargainFrom.GetPropertyValueOrDefault("Tags", bargainTo.Tags);
-            bargainTo.Description = (string)bargainFrom.GetPropertyValueOrDefault("Description", bargainTo.Description);
+            bargainTo.Description = ((string)bargainFrom.GetPropertyValueOrDefault("Description", bargainTo.Description)).ReplaceModIDsInTokens(offset);
             bargainTo.Offer = offer;
             bargainTo.Stock = (int)bargainFrom.GetPropertyValueOrDefault("Stock", bargainTo.Stock);
             bargainTo.Price = (string)bargainFrom.GetPropertyValueOrDefault("Price", bargainTo.Price);
             bargainTo.QualitiesRequired = qualitiesRequired;
-            bargainTo.Name = (string)bargainFrom.GetPropertyValueOrDefault("Name", bargainTo.Name);
+            bargainTo.Name = ((string)bargainFrom.GetPropertyValueOrDefault("Name", bargainTo.Name)).ReplaceModIDsInTokens(offset);
         }
 
         public Bargain FromJsonElement(JsonElement item, int offset)
@@ -64,12 +64,12 @@ namespace SkylessAPI.ModInterop.Mergers
             return new Bargain()
             {
                 Tags = (string)item.GetPropertyValueOrDefault("Tags"),
-                Description = (string)item.GetPropertyValueOrDefault("Description"),
+                Description = ((string)item.GetPropertyValueOrDefault("Description")).ReplaceModIDsInTokens(offset),
                 Offer =  offer,
                 Stock = (int)item.GetPropertyValueOrDefault("Stock", 0),
                 Price = (string)item.GetPropertyValueOrDefault("Price"),
                 QualitiesRequired = qualitiesRequired,
-                Name = (string)item.GetPropertyValueOrDefault("Name"),
+                Name = ((string)item.GetPropertyValueOrDefault("Name")).ReplaceModIDsInTokens(offset),
                 Id = item.Id(offset, false)
             };
         }

@@ -50,7 +50,7 @@ namespace SkylessAPI.ModInterop.Mergers
                 prospectFrom.GetPropertyOrDefault("Completions"), CompletionMerger.Instance, offset).ToIList();
 
             prospectTo.Tags = (string)prospectFrom.GetPropertyValueOrDefault("Tags", prospectTo.Tags);
-            prospectTo.Description = (string)prospectFrom.GetPropertyValueOrDefault("Description", prospectTo.Description);
+            prospectTo.Description = ((string)prospectFrom.GetPropertyValueOrDefault("Description", prospectTo.Description)).ReplaceModIDsInTokens(offset);
             prospectTo.Setting = setting;
             prospectTo.Request = request;
             prospectTo.Demand = (int)prospectFrom.GetPropertyValueOrDefault("Demand", prospectTo.Demand);
@@ -58,7 +58,7 @@ namespace SkylessAPI.ModInterop.Mergers
             prospectTo.QualitiesAffected = qualitiesAffected;
             prospectTo.QualitiesRequired = qualitiesRequired;
             prospectTo.Completions = completions;
-            prospectTo.Name = (string)prospectFrom.GetPropertyValueOrDefault("Name", prospectTo.Name);
+            prospectTo.Name = ((string)prospectFrom.GetPropertyValueOrDefault("Name", prospectTo.Name)).ReplaceModIDsInTokens(offset);
         }
 
         public Prospect FromJsonElement(JsonElement item, int offset)
@@ -82,7 +82,7 @@ namespace SkylessAPI.ModInterop.Mergers
             return new Prospect() 
             { 
                 Tags = (string)item.GetPropertyValueOrDefault("Tags"),
-                Description = (string)item.GetPropertyValueOrDefault("Description"),
+                Description = ((string)item.GetPropertyValueOrDefault("Description")).ReplaceModIDsInTokens(offset),
                 Setting = setting,
                 Request = new Quality(item.GetProperty("Request").Id(offset)),
                 Demand = (int)item.GetPropertyValueOrDefault("Demand"),
@@ -90,7 +90,7 @@ namespace SkylessAPI.ModInterop.Mergers
                 QualitiesAffected = qualitiesAffected,
                 QualitiesRequired = qualitiesRequired,
                 Completions = completions,
-                Name = (string)item.GetPropertyValueOrDefault("Name"),
+                Name = ((string)item.GetPropertyValueOrDefault("Name")).ReplaceModIDsInTokens(offset),
                 Id = item.Id(offset, false)
             };
         }

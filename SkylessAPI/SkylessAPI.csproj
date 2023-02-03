@@ -187,22 +187,12 @@
     <Compile Include="ModInterop\Mergers\ShopQRequirementMerger.cs" />
     <Compile Include="Utilities\PluginManager.cs" />
     <Compile Include="ModInterop\RepositoryMerger.cs" />
-    <Compile Include="NullableIntermediaries\AreaNullable.cs" />
-    <Compile Include="NullableIntermediaries\BargainNullable.cs" />
-    <Compile Include="NullableIntermediaries\DomicileNullable.cs" />
-    <Compile Include="NullableIntermediaries\EventNullable.cs" />
-    <Compile Include="NullableIntermediaries\ExchangeNullable.cs" />
-    <Compile Include="NullableIntermediaries\IFailbetterEquivalent.cs" />
-    <Compile Include="NullableIntermediaries\PersonaNullable.cs" />
-    <Compile Include="NullableIntermediaries\ProspectNullable.cs" />
-    <Compile Include="NullableIntermediaries\QualityNullable.cs" />
-    <Compile Include="NullableIntermediaries\SettingNullable.cs" />
+    <Compile Include="Utilities\SkylessStringUtils.cs" />
     <Compile Include="ZenjectAPI.cs" />
     <Compile Include="SkylessAPI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\Extensions.cs" />
     <Compile Include="Utilities\StartupHelper.cs" />
-    <Compile Include="Utilities\SubmoduleManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
