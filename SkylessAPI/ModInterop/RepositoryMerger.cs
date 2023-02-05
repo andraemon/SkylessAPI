@@ -30,34 +30,34 @@ namespace SkylessAPI.ModInterop
                 }
                 catch (Exception e)
                 {
-                    SkylessAPI.Logging.LogWarning($"SkylessAPI merged repo {jsonSlug} is malformed, attempting to re-merge mods...");
+                    SkylessAPI.Logging.LogWarning($"Merged repository {slug}.bytes is malformed, attempting to re-merge mods...");
                     SkylessAPI.Logging.LogDebug(e);
                 }
             }
 
             foreach (string guid in AddonAPI.LoadOrder)
             {
-                var addon = AddonAPI.Addons[guid];
+                //var addon = AddonAPI.Addons[guid];
 
-                if (addon.Repos.Contains(jsonSlug))
-                {
-                    var name = addon.Manifest.Name;
+                //if (addon.Repos.Contains(jsonSlug))
+                //{
+                //    var name = addon.Manifest.Name;
 
-                    try
-                    {
-                        SkylessAPI.Logging.LogDebug($"Merging {name} {jsonSlug} to base...");
-                        var modRepo = JsonSerializer.Deserialize<List<JsonElement>>
-                            (File.ReadAllText(Path.Combine(addon.Directory, jsonSlug)), AddonAPI.JsonOptions);
+                //    try
+                //    {
+                //        SkylessAPI.Logging.LogDebug($"Merging {name} {jsonSlug} to base...");
+                //        var modRepo = JsonSerializer.Deserialize<List<JsonElement>>
+                //            (File.ReadAllText(Path.Combine(addon.Directory, jsonSlug)), AddonAPI.JsonOptions);
 
-                        baseRepo.MergeModRepoToBase(modRepo, merger, addon.IdOffset);
-                        addon.Loaded = true;
-                    }
-                    catch (Exception e)
-                    {
-                        SkylessAPI.Logging.LogError($"Failed to load {name} when processing {jsonSlug}!");
-                        SkylessAPI.Logging.LogError(e);
-                    }
-                }
+                //        baseRepo.MergeModRepoToBase(modRepo, merger, addon.IdOffset);
+                //        addon.Loaded = true;
+                //    }
+                //    catch (Exception e)
+                //    {
+                //        SkylessAPI.Logging.LogError($"Failed to load {name} when processing {jsonSlug}!");
+                //        SkylessAPI.Logging.LogError(e);
+                //    }
+                //}
             }
 
             SerializeBytes(slug, baseRepo.ToIl2CppList().Cast<Il2CppSystem.Collections.Generic.IEnumerable<T>>());
@@ -104,7 +104,7 @@ namespace SkylessAPI.ModInterop
                         if (AddonAPI.IsLoaded(targetModGuid))
                         {
                             var offsetId = id + AddonAPI.IDOffset(targetModGuid);
-                            var targetModName = AddonAPI.GetName(targetModGuid);
+                            var targetModName = PluginManager.PluginName(targetModGuid);
                             var itemTo = dictTo[offsetId];
 
                             if (itemFrom.TryGetProperty("Command", out JsonElement command))

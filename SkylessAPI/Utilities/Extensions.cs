@@ -36,9 +36,10 @@ namespace SkylessAPI.Utilities
             {
                 var alreadyVisited = visited.TryGetValue(item, out bool inProcess);
 
-                if (alreadyVisited && inProcess)
+                if (alreadyVisited)
                 {
-                    throw new ArgumentException("Source contains a cyclic induced subgraph.");
+                    if (inProcess)
+                        throw new ArgumentException("Source contains a cyclic induced subgraph.");
                 }
                 else
                 {

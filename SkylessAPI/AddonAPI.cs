@@ -6,6 +6,7 @@ using Skyless.Assets.Code.Skyless.Utilities.Serialization;
 using Skyless.Game.Data;
 using SkylessAPI.ModInterop;
 using SkylessAPI.Utilities;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -88,11 +89,15 @@ namespace SkylessAPI
                 CalculateOffsets();
                 LoadOrder = GetLoadOrder();
             }
+            else LoadOrder = new List<string>();
 
-            SkylessAPI.Logging.LogDebug("Addon load order:");
-            LoadOrder.ForEach(s => SkylessAPI.Logging.LogDebug($" - {s}"));
-            
-            ApplyPatches();
+            if (LoadOrder.Count > 0)
+            {
+                SkylessAPI.Logging.LogDebug("Addon load order:");
+                LoadOrder.ForEach(s => SkylessAPI.Logging.LogDebug($" - {s}"));
+
+                ApplyPatches();
+            }
 
             SkylessAPI.Logging.LogInfo("Loaded AddonAPI");
         }
@@ -205,7 +210,16 @@ namespace SkylessAPI
             var pluginGuids = plugins.Select(p => p.Manifest.Guid);
             var dependencyDict = plugins.ToDictionary(p => p.Manifest.Guid, p => p.AllDependencies());
 
-            return pluginGuids.TopologicalSort(s => dependencyDict[s]);
+            try
+            {
+                return pluginGuids.TopologicalSort(s => dependencyDict[s]);
+            }
+            catch (ArgumentException)
+            {
+                SkylessAPI.Logging.LogWarning("There is a cyclic dependency in the addon dependency tree, no addons will be loaded.");
+            }
+
+            return new List<string>();
         }
 
         private static IEnumerable<PluginManager.Plugin> ResolveHardDependencies(IEnumerable<PluginManager.Plugin> plugins)

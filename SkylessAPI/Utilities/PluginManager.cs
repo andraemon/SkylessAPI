@@ -46,6 +46,8 @@ namespace SkylessAPI.Utilities
 
             PluginsUpdated = ArePluginsUpdated() || SkylessAPI.AlwaysMergeRepos.Value;
 
+            if (PluginsUpdated) SkylessAPI.Logging.LogDebug("Plugin list updated");
+
             AddonAPI.Load();
 
             File.WriteAllText(pluginListPath, JsonSerializer.Serialize(Plugins, SkylessAPI.JsonOptions));
