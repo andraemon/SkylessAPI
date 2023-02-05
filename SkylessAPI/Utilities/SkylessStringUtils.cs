@@ -12,12 +12,12 @@ namespace SkylessAPI.Utilities
         /// <summary>
         /// Matches all valid tokens in a string, and provides grouping of their internal elements.
         /// </summary>
-        public static readonly Regex TokenRegex = new Regex("\\[([^:\\]]+):([^\\]]+)\\]");
+        public static Regex TokenRegex { get; } = new Regex(@"\[([^:\]]+):([^\]]+)\]", RegexOptions.Compiled);
 
         /// <summary>
         /// Matches a token value, and provides grouping of its internal elements.
         /// </summary>
-        public static readonly Regex TokenValueRegex = new Regex("^(?:\\(([^\\)]+)\\))?([^\\(]+)(?:\\(([^\\)]+)\\))?$");
+        public static Regex TokenValueRegex { get; } = new Regex(@"^(?:\(([^\)]+)\))?([^\(]+)(?:\(([^\)]+)\))?$", RegexOptions.Compiled);
 
         /// <summary>
         /// Replaces raw mod IDs with offset IDs in all dynamic tokens.
@@ -31,7 +31,7 @@ namespace SkylessAPI.Utilities
 
         /// <summary>
         /// If there is a raw mod ID in the token, replaces it with an offset ID.
-        /// If there is no such ID or it cannot be parsed, no replacements will be made.
+        /// If an ID cannot be parsed, no replacements will be made.
         /// </summary>
         /// <param name="tokenValue">The token to replace IDs within.</param>
         /// <param name="offset">The ID offset of the mod from which the token originated.</param>
@@ -52,7 +52,7 @@ namespace SkylessAPI.Utilities
                     if (AddonAPI.IsLoaded(guid) && int.TryParse(idString, out var id))
                     {
                         if (id >= AddonAPI.ModIdCutoff)
-                            return $"{AddonAPI.ModId(id, guid)}{variable}";
+                            return $"{AddonAPI.ModID(id, guid)}{variable}";
                         return $"{idString}{variable}";
                     }
                 }

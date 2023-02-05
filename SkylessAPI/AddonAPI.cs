@@ -1,63 +1,106 @@
-﻿using BepInEx;
-using BinarySerializer;
-using Failbetter.Core;
-using Failbetter.Core.DataInterfaces;
-using Failbetter.Data;
+﻿using Failbetter.Core;
 using HarmonyLib;
 using Il2CppSystem.Linq;
-using Skyless.Assets.Code.Failbetter.Data;
-using Skyless.Assets.Code.Skyless.Game.Config;
 using Skyless.Assets.Code.Skyless.Game.Data;
 using Skyless.Assets.Code.Skyless.Utilities.Serialization;
 using Skyless.Game.Data;
 using SkylessAPI.ModInterop;
 using SkylessAPI.Utilities;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using UnhollowerRuntimeLib;
-using UnityEngine;
 using Event = Failbetter.Core.Event;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace SkylessAPI
 {
     public static class AddonAPI
     {
-        internal static Dictionary<string, AddonInfo> Addons = new Dictionary<string, AddonInfo>();
-        internal static Dictionary<string, AddonInfo> OldAddons = new Dictionary<string, AddonInfo>();
-        internal static List<string> LoadOrder = new List<string>() { "dev.exotico.skylesstestaddon", "dev.exotico.skylesstestaddon2" };
-        private static readonly string[] RepoNames = new string[] { 
-            "areas.json", 
-            "bargains.json", 
-            "domiciles.json", 
-            "events.json", 
-            "exchanges.json", 
-            "personas.json", 
-            "prospects.json", 
-            "qualities.json", 
-            "settings.json" 
-        };
-        
-        public const int ModIdCutoff = 700000;
-        internal static bool ModListUpdated;
-        internal static JsonSerializerOptions JsonOptions = new JsonSerializerOptions() { 
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            AllowTrailingCommas = true,
-            IncludeFields = true,
-            WriteIndented = true
+        internal static List<string> LoadOrder { get; private set; }
+
+        internal static bool AddonsUpdated { get; private set; }
+
+        private static HashSet<string> RepoNames { get; } = new HashSet<string>() {
+            "areas.json",
+            "bargains.json",
+            "domiciles.json",
+            "events.json",
+            "exchanges.json",
+            "personas.json",
+            "prospects.json",
+            "qualities.json",
+            "settings.json"
         };
 
-        private static void Load()
+        private static Regex IDRegex { get; } = new Regex(@"""Id""\s*:\s*(\d+)", RegexOptions.Compiled);
+
+        public const int ModIdCutoff = 700000;
+
+        #region Public API
+        /// <summary>
+        /// Gets the actual ID of an added game object.
+        /// </summary>
+        /// <param name="guid">The GUID of the plugin.</param>
+        /// <param name="baseId">The original ID of the object.</param>
+        /// <returns>The actual ID of an added game object, or -1 if the plugin cannot be found or has no addon.</returns>
+        public static int ModID(int baseId, string guid)
+        {
+            if (PluginManager.Plugins.TryGetValue(guid, out var plugin) && plugin.Addon != null)
+                return baseId + plugin.Addon.IdOffset;
+            return -1;
+        } 
+
+        /// <summary>
+        /// Gets the ID offset of an addon.
+        /// </summary>
+        /// <param name="guid">The GUID of the plugin.</param>
+        /// <returns>The ID offset of the addon, if it can be found.</returns>
+        public static int IDOffset(string guid)
+        {
+            if (PluginManager.Plugins.TryGetValue(guid, out var plugin) && plugin.Addon != null)
+                return plugin.Addon.IdOffset;
+            return -1;
+        }
+
+        /// <summary>
+        /// Checks whether or not an addon is loaded.
+        /// </summary>
+        /// <param name="guid">The GUID of the plugin.</param>
+        /// <returns>True if the addon is loaded, false otherwise.</returns>
+        public static bool IsLoaded(string guid)
+        {
+            if (PluginManager.Plugins.TryGetValue(guid, out var plugin) && plugin.Addon != null)
+                return plugin.Addon.Loaded;
+            return false;
+        }
+        #endregion
+
+        internal static void Load()
+        {
+            FindAddonsForPlugins();
+
+            AddonsUpdated = AreAddonsUpdated();
+
+            if (AddonsUpdated)
+            {
+                CalculateOffsets();
+                LoadOrder = GetLoadOrder();
+            }
+
+            SkylessAPI.Logging.LogDebug("Addon load order:");
+            LoadOrder.ForEach(s => SkylessAPI.Logging.LogDebug($" - {s}"));
+            
+            ApplyPatches();
+
+            SkylessAPI.Logging.LogInfo("Loaded AddonAPI");
+        }
+
+        private static void ApplyPatches()
         {
             SkylessAPI.Harmony.Patch(typeof(BinarySerializationService).GetMethod(nameof(BinarySerializationService.DeserializeAreasFromResources)),
-                postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Area_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic))); 
+                postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Area_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
             SkylessAPI.Harmony.Patch(typeof(BinarySerializationService).GetMethod(nameof(BinarySerializationService.DeserializeBargainsFromResources)),
                 postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Bargain_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
             SkylessAPI.Harmony.Patch(typeof(BinarySerializationService).GetMethod(nameof(BinarySerializationService.DeserializeDomicilesFromResources)),
@@ -77,119 +120,123 @@ namespace SkylessAPI
 
             SkylessAPI.Harmony.Patch(typeof(CharacterRepository).GetMethod(nameof(CharacterRepository.LoadCharacter)),
                 prefix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(CleanupLineage), BindingFlags.Static | BindingFlags.NonPublic)));
-
-            SkylessAPI.Logging.LogInfo("Loaded AddonAPI");
-        }
-
-        [InvokeOnStart]
-        private static void StartupAlways()
-        {
-            if (!Directory.Exists(SkylessAPI.SkylessDataPath))
-                Directory.CreateDirectory(SkylessAPI.SkylessDataPath);
-
-            string addonInfoPath = Path.Combine(SkylessAPI.SkylessDataPath, "addon_info.json");
-            var addonDict = CurrentAddonDict();
-
-            if (File.Exists(addonInfoPath))
-            {
-                try
-                {
-                    Addons = JsonSerializer.Deserialize<Dictionary<string, AddonInfo>>(File.ReadAllText(addonInfoPath), JsonOptions);
-                }
-                catch (Exception e)
-                {
-                    SkylessAPI.Logging.LogWarning("Failed to load old addon info, save cleanup will not be available if the mod list has changed.");
-                    SkylessAPI.Logging.LogDebug(e);
-                }
-            }
-
-            ModListUpdated = IsModListUpdated(addonDict, Addons) || SkylessAPI.AlwaysMergeRepos.Value;
-
-            if (addonDict.Count > 0)
-            {
-                if (ModListUpdated)
-                {
-                    SkylessAPI.Logging.LogDebug("Mod list updated");
-                    CalculateOffsets(addonDict);
-                    OldAddons = Addons;
-                    Addons = addonDict;
-                }
-                else
-                {
-                    foreach (var addon in addonDict)
-                    {
-                        Addons[addon.Key].Directory = addon.Value.Directory;
-                    }
-                }
-                File.WriteAllText(addonInfoPath, JsonSerializer.Serialize(Addons, JsonOptions));
-
-                Load();
-            }
         }
 
         #region Helper Methods
-        // this also updates directories on the old dict
-        private static bool IsModListUpdated(Dictionary<string, AddonInfo> current, Dictionary<string, AddonInfo> old)
+        private static void FindAddonsForPlugins()
         {
-            if (current.Count != old.Count) return true;
-
-            int matches = 0;
-            foreach (string guid in old.Keys)
-            {
-                if (current.TryGetValue(guid, out var currentInfo))
+            if (!PluginManager.PluginsUpdated)
+                foreach (var plugin in PluginManager.Plugins.Values)
                 {
-                    old[guid].Directory = currentInfo.Directory;
+                    plugin.Addon = PluginManager.OldPlugins[plugin.Manifest.Guid].Addon;
+                    plugin.Addon.Repos = FindReposInDirectory(plugin.Directory);
+                }
+            else
+                foreach (var plugin in PluginManager.Plugins.Values)
+                    plugin.Addon = GetAddonForPlugin(plugin);
+        }
 
-                    if (old[guid].Manifest.Version == currentInfo.Manifest.Version)
-                        matches++;
+        private static Addon GetAddonForPlugin(PluginManager.Plugin plugin)
+        {
+            var repos = FindReposInDirectory(plugin.Directory);
+
+            if (repos == null)
+                SkylessAPI.Logging.LogWarning($"{plugin.Manifest.Name} has a duplicate repository file; its addon will not be loaded.");
+            else if (repos.Count == 0)
+                SkylessAPI.Logging.LogDebug($"No addon detected for {plugin.Manifest.Name}.");
+            else
+            {
+                SkylessAPI.Logging.LogDebug($"Addon registered for {plugin.Manifest.Name}.");
+                return new Addon(repos);
+            }
+
+            return null;
+        }
+
+        private static Dictionary<string, string> FindReposInDirectory(string directory)
+        {
+            var repos = new Dictionary<string, string>();
+
+            foreach (var jsonPath in Directory.EnumerateFiles(directory, "*.json", SearchOption.AllDirectories))
+            {
+                var fileName = Path.GetFileName(jsonPath);
+
+                if (RepoNames.Contains(fileName))
+                {
+                    if (repos.ContainsKey(fileName))
+                        return null;
+                    repos.Add(fileName, jsonPath);
                 }
             }
 
-            if (matches == old.Count)
-                return false;
-            return true;
+            return repos;
         }
 
-        private static Dictionary<string, AddonInfo> CurrentAddonDict()
+        private static bool AreAddonsUpdated()
         {
-            List<AddonInfo> addons = new List<AddonInfo>();
-            Dictionary<string, AddonInfo> addonDict = new Dictionary<string, AddonInfo>();
+            if (!PluginManager.PluginsUpdated) return false;
 
-            // Get directories which contain an addon manifest
-            var directories = Directory.GetFiles(Paths.PluginPath, "manifest.json", SearchOption.AllDirectories)
-                .Select(a => Path.GetDirectoryName(a)).Concat(Directory.GetFiles(Application.persistentDataPath, "manifest.json", SearchOption.AllDirectories)
-                    .Select(a => Path.GetDirectoryName(a))).ToHashSet();
+            foreach (var plugin in PluginManager.Plugins.Values)
+                if (plugin.Addon != null)
+                    if (!PluginManager.OldPlugins.TryGetValue(plugin.Manifest.Guid, out var oldPlugin)
+                        || plugin.Manifest.Version != oldPlugin.Manifest.Version)
+                        return true;
 
-            // Try to construct addon info, only registering if manifest is valid
-            foreach (string directory in directories)
-            {
-                var addon = new AddonInfo(directory);
-                if (addon.ValidateManifest())
-                    addons.Add(addon);
-            }
-
-            // Resolve version conflicts if there are multiple versions of the same addon present, only keeping the newest
-            addons = addons.GroupBy(
-                addon => addon.Manifest.Guid,
-                addon => addon,
-                (guid, versions) => versions.OrderByDescending(v => v.Manifest.Version).First()
-            ).ToList();
-            
-            foreach (AddonInfo addon in addons)
-                addonDict.Add(addon.Manifest.Guid, addon);
-
-            return addonDict;
+            return false;
         }
 
-        private static void CalculateOffsets(Dictionary<string, AddonInfo> addonDict)
+        private static void CalculateOffsets()
         {
             int maxId = ModIdCutoff;
-            foreach (AddonInfo info in addonDict.Values)
+            foreach (var plugin in PluginManager.Plugins.Values)
             {
-                info.EstablishIdRange();
-                info.IdOffset = maxId - info.BaseModIdRange.Min;
-                maxId = info.BaseModIdRange.Max + info.IdOffset + 1;
+                var addon = plugin.Addon;
+
+                addon.EstablishIdRange();
+                addon.IdOffset = maxId - addon.BaseModIDRange.Min;
+                maxId = addon.BaseModIDRange.Max + addon.IdOffset + 1;
             }
+        }
+
+        private static List<string> GetLoadOrder()
+        {
+            var plugins = ResolveHardDependencies(PluginManager.Plugins.Values.Where(p => p.Addon != null));
+
+            var pluginGuids = plugins.Select(p => p.Manifest.Guid);
+            var dependencyDict = plugins.ToDictionary(p => p.Manifest.Guid, p => p.AllDependencies());
+
+            return pluginGuids.TopologicalSort(s => dependencyDict[s]);
+        }
+
+        private static IEnumerable<PluginManager.Plugin> ResolveHardDependencies(IEnumerable<PluginManager.Plugin> plugins)
+        {
+            var pluginDict = plugins.ToDictionary(p => p.Manifest.Guid);
+            var prevCount = 0;
+
+            while (pluginDict.Count > prevCount)
+            {
+                var pluginsToRemove = new HashSet<string>();
+
+                foreach (var plugin in pluginDict.Values)
+                {
+                    foreach (var dep in plugin.Manifest.HardDependencies)
+                    {
+                        if (!pluginDict.ContainsKey(dep))
+                        {
+                            pluginsToRemove.Add(plugin.Manifest.Guid);
+                            SkylessAPI.Logging.LogWarning($"{plugin.Manifest.Name} is missing hard dependency {dep} and will not be loaded.");
+                            break;
+                        }
+                    }
+                }
+
+                foreach (var remove in pluginsToRemove)
+                    pluginDict.Remove(remove);
+
+                prevCount = pluginDict.Count;
+            }
+
+            return pluginDict.Select(p => p.Value);
         }
         #endregion
 
@@ -224,11 +271,11 @@ namespace SkylessAPI
 
         [HarmonyPriority(Priority.First)]
         private static Il2CppSystem.Collections.Generic.IList<Quality> Quality_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Quality> __result) =>
-            __result; //QuickMergeAddonRepos(__result, "qualities.json");
+            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.QualityMerger.Instance, "qualities").ToIl2CppList().ToIList();
 
         [HarmonyPriority(Priority.First)]
         private static Il2CppSystem.Collections.Generic.IList<Setting> Setting_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Setting> __result) =>
-            __result; //QuickMergeAddonRepos(__result, "settings.json");
+            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.SettingMerger.Instance, "settings").ToIl2CppList().ToIList();
         #endregion
 
         // Move these to a class in ModInterop
@@ -252,148 +299,36 @@ namespace SkylessAPI
 
         }
 
-        private static Il2CppSystem.Collections.Generic.List<T> QuickMergeAddonRepos<T>(Il2CppSystem.Collections.Generic.List<T> repo, string slug) where T : Entity
-        {
-            var moddedList = new Il2CppSystem.Collections.Generic.List<T>();
-            var tempDict = new Dictionary<int, T>();
-
-            for (int i = 0; i < repo.Count; i++)
-            {
-                tempDict[repo[i].Id] = repo[i];
-            }
-
-            foreach (AddonInfo addonInfo in Addons.Values)
-            {
-                string directory = addonInfo.Directory;
-                if (addonInfo.Repos.Contains(slug))
-                {
-                    var modEvents = JsonSerializer.Deserialize<Il2CppSystem.Collections.Generic.List<T>>(File.ReadAllText(Path.Combine(directory, slug)));
-                    for (int i = 0; i < modEvents.Count; i++)
-                        tempDict[modEvents[i].Id] = modEvents[i];
-                }
-            }
-
-            foreach (KeyValuePair<int, T> item in tempDict)
-                moddedList.Add(item.Value);
-
-            return moddedList;
-        }
-
-        private static List<T> DeserializeRepo<T>(string path)
-        {
-            try {
-                var values = JsonSerializer.Deserialize<Il2CppSystem.Collections.Generic.List<T>>(File.ReadAllText(path));
-                var list = new List<T>();
-                for (int i = 0; i < values.Count; i++)
-                    list.Add(values[i]);
-                return list;
-            }
-            catch (Exception e) {
-                SkylessAPI.Logging.LogError($"Could not deserialize {path}");
-                SkylessAPI.Logging.LogDebug(e);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Gets the actual ID of an added game object.
-        /// </summary>
-        /// <param name="guid">The GUID of the addon.</param>
-        /// <param name="baseId">The original ID of the object.</param>
-        /// <returns>The actual ID of an added game object, or -1 if the specified addon is not loaded.</returns>
-        public static int ModId(int baseId, string guid) =>
-            IsLoaded(guid) ? baseId + Addons[guid].IdOffset : -1;
-
-        /// <summary>
-        /// Gets the ID offset of an addon.
-        /// </summary>
-        /// <param name="guid">The GUID of the addon.</param>
-        /// <returns>The offset of addon, or -1 if the addon is not loaded.</returns>
-        public static int GetOffset(string guid)
-            => IsLoaded(guid) ? Addons[guid].IdOffset : -1;
-
-        /// <summary>
-        /// Gets the name of a mod by its GUID.
-        /// </summary>
-        /// <param name="guid">The GUID of the addon.</param>
-        /// <returns>The name of the addon, or null if the addon is not loaded.</returns>
-        public static string GetName(string guid)
-            => IsLoaded(guid) ? Addons[guid].Manifest.Name : null;
-
-        /// <summary>
-        /// Checks whether or not an addon is loaded.
-        /// </summary>
-        /// <param name="guid">The GUID of the addon.</param>
-        /// <returns>True if the addon is loaded, false otherwise.</returns>
-        public static bool IsLoaded(string guid)
-            => Addons.ContainsKey(guid);
-
-        internal class AddonInfo
+        internal class Addon
         {
             [JsonConstructor]
-            public AddonInfo(List<string> Repos, AddonManifest Manifest, string Directory, int IdOffset, (int, int) BaseModIdRange)
+            public Addon(Dictionary<string, string> Repos, int IdOffset, (int, int) BaseModIdRange)
             {
                 this.Repos = Repos;
-                this.Manifest = Manifest;
-                this.Directory = Directory;
                 this.IdOffset = IdOffset;
-                this.BaseModIdRange = BaseModIdRange;
+                this.BaseModIDRange = BaseModIdRange;
             }
 
-            public AddonInfo(string directory)
+            public Addon(Dictionary<string, string> repos)
             {
-                Repos = new List<string>();
-                Directory = directory;
+                Repos = repos;
                 IdOffset = 0;
-                BaseModIdRange = (-1, -1);
-
-                FindRepos();
-                ReadManifest();
-            }
-
-            public void ReadManifest()
-            {
-                string manifestPath = Path.Combine(Directory, "manifest.json");
-                try
-                {
-                    Manifest = JsonSerializer.Deserialize<AddonManifest>(File.ReadAllText(manifestPath), JsonOptions);
-                }
-                catch (Exception e)
-                {
-                    Manifest = null;
-                    SkylessAPI.Logging.LogWarning($"Could not deserialize {manifestPath}, addon will not be loaded.");
-                    SkylessAPI.Logging.LogDebug(e);
-                }
-            }
-
-            public bool ValidateManifest() =>
-                Manifest != null && Manifest.Validate();
-
-            public void FindRepos()
-            {
-                foreach (string file in System.IO.Directory.GetFiles(Directory))
-                {
-                    var filename = Path.GetFileName(file);
-                    if (RepoNames.Contains(filename))
-                        Repos.Add(filename);
-                }
+                BaseModIDRange = (-1, -1);
             }
 
             public void EstablishIdRange()
             {
-                Regex r = new Regex("\"Id\"\\s*:\\s*(?<Id>\\d+)");
                 int min = int.MaxValue, max = 0;
-                foreach (string slug in Repos)
+
+                foreach (var repoPath in Repos.Values)
                 {
-                    using (StreamReader sr = new StreamReader(Path.Combine(Directory, slug)))
+                    using (StreamReader sr = new StreamReader(repoPath))
                     {
-                        string repo = sr.ReadToEnd();
-                        foreach (Match m in r.YieldMatches(repo))
+                        while (sr.Peek() >= 0)
                         {
-                            if (m.Success)
+                            foreach (Match m in IDRegex.YieldMatches(sr.ReadLine()))
                             {
-                                int id = int.Parse(m.Groups["Id"].Value);
-                                if (id >= ModIdCutoff)
+                                if (m.Success && int.TryParse(m.Groups[1].Value, out int id) && id >= ModIdCutoff)
                                 {
                                     if (id < min) min = id;
                                     if (id > max) max = id;
@@ -402,43 +337,16 @@ namespace SkylessAPI
                         }
                     }
                 }
-                if (max == 0) BaseModIdRange = (0, 0);
-                else BaseModIdRange = (min, max);
+
+                if (max == 0) BaseModIDRange = (0, 0);
+                else BaseModIDRange = (min, max);
             }
 
-            public List<string> Repos { get; internal set; }
-            public AddonManifest Manifest { get; internal set; }
-            public string Directory { get; internal set; }
+            public Dictionary<string, string> Repos { get; internal set; }
             public int IdOffset { get; internal set; }
-            public (int Min, int Max) BaseModIdRange { get; internal set; }
+            public (int Min, int Max) BaseModIDRange { get; internal set; }
             [JsonIgnore]
             public bool Loaded { get; internal set; }
-        }
-
-        internal class AddonManifest
-        {
-            public AddonManifest(string Guid, string Name, string Version, string[] Dependencies, string[] UpdateKeys)
-            {
-                this.Guid = Guid;
-                this.Name = Name;
-                this.Version = Version;
-                this.Dependencies = Dependencies;
-                this.UpdateKeys = UpdateKeys;
-            }
-
-            public bool Validate()
-            {
-                if (Guid.IsNullOrWhiteSpace() || Version.IsNullOrWhiteSpace()) return false;
-                if (Dependencies == null) Dependencies = Array.Empty<string>();
-                if (UpdateKeys == null) UpdateKeys = Array.Empty<string>();
-                return true;
-            }
-            
-            public string Guid { get; internal set; }
-            public string Name { get; internal set; }
-            public string Version { get; internal set; }
-            public string[] Dependencies { get; internal set; }
-            public string[] UpdateKeys { get; internal set; }
         }
     }
 }

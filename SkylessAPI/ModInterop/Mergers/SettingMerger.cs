@@ -67,7 +67,7 @@ namespace SkylessAPI.ModInterop.Mergers
                 ActionsInPeriodBeforeExhaustion = (int)item.GetPropertyValueOrDefault("ActionsInPeriodBeforeExhaustion", 0),
                 Description = (string)item.GetPropertyValueOrDefault("Description"),
                 Name = (string)item.GetPropertyValueOrDefault("Name"),
-                Id = item.Id(offset)
+                Id = item.Id(offset, false)
             };
         }
     }

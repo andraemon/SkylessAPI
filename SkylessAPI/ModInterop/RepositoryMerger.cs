@@ -18,9 +18,9 @@ namespace SkylessAPI.ModInterop
         public static List<T> MergeOrLoadRepos<T>(this List<T> baseRepo, Mergers.IMerger<T> merger, string slug) where T : Entity
         {
             var jsonSlug = slug + ".json";
-            var path = Path.Combine(SkylessAPI.SkylessDataPath, slug + ".bytes");
+            var path = Path.Combine(SkylessAPI.DataPath, slug + ".bytes");
 
-            if (File.Exists(path) && !AddonAPI.ModListUpdated)
+            if (File.Exists(path) && !AddonAPI.AddonsUpdated)
             {
                 try
                 {
@@ -71,7 +71,7 @@ namespace SkylessAPI.ModInterop
 
             foreach (var itemFrom in listFrom)
             {
-                var id = itemFrom.GetPropertyInt("Id");
+                var id = itemFrom.GetProperty("Id").GetInt32();
                 if (id < AddonAPI.ModIdCutoff)
                 {
                     var itemTo = dictTo[id];
@@ -103,7 +103,7 @@ namespace SkylessAPI.ModInterop
 
                         if (AddonAPI.IsLoaded(targetModGuid))
                         {
-                            var offsetId = id + AddonAPI.GetOffset(targetModGuid);
+                            var offsetId = id + AddonAPI.IDOffset(targetModGuid);
                             var targetModName = AddonAPI.GetName(targetModGuid);
                             var itemTo = dictTo[offsetId];
 
@@ -169,7 +169,7 @@ namespace SkylessAPI.ModInterop
 
         private static object DeserializeBytes(string slug)
         {
-            var stream = Il2CppSystem.IO.File.OpenRead(Path.Combine(SkylessAPI.SkylessDataPath, slug + ".bytes"));
+            var stream = Il2CppSystem.IO.File.OpenRead(Path.Combine(SkylessAPI.DataPath, slug + ".bytes"));
             var reader = new Il2CppSystem.IO.BinaryReader(stream);
             object repo = null;
 
@@ -219,7 +219,7 @@ namespace SkylessAPI.ModInterop
 
         private static void SerializeBytes<T>(string slug, Il2CppSystem.Collections.Generic.IEnumerable<T> repo)
         {
-            var stream = Il2CppSystem.IO.File.Open(Path.Combine(SkylessAPI.SkylessDataPath, slug + ".bytes"), Il2CppSystem.IO.FileMode.Create);
+            var stream = Il2CppSystem.IO.File.Open(Path.Combine(SkylessAPI.DataPath, slug + ".bytes"), Il2CppSystem.IO.FileMode.Create);
             var writer = new Il2CppSystem.IO.BinaryWriter(stream);
 
             try

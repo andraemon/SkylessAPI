@@ -8,6 +8,7 @@ using Skyless.Assets.Code.Skyless.Game.Config;
 using SkylessAPI.Utilities;
 using System;
 using System.IO;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -18,11 +19,15 @@ namespace SkylessAPI
     {
         public static string SkylessDataPath { get; private set; }
 
-        internal static ManualLogSource Logging { get; set; }
+        internal static string DataPath { get; private set; }
 
-        internal static Harmony Harmony { get; set; }
+        internal static ManualLogSource Logging { get; private set; }
 
-        internal static ConfigEntry<bool> AlwaysMergeRepos { get; set; }
+        internal static Harmony Harmony { get; private set; }
+
+        internal static ConfigEntry<bool> AlwaysMergeRepos { get; private set; }
+
+        internal static JsonSerializerOptions JsonOptions { get; private set; }
 
         public SkylessAPI()
         {
@@ -33,7 +38,19 @@ namespace SkylessAPI
 
         public override void Load()
         {
-            SkylessDataPath = Path.Combine(Application.persistentDataPath, "SkylessAPI");
+            SkylessDataPath = Application.persistentDataPath;
+            DataPath = Path.Combine(SkylessDataPath, "SkylessAPI");
+            JsonOptions = new JsonSerializerOptions()
+            {
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true,
+                IncludeFields = true,
+                WriteIndented = true
+            };
+
+            if (!Directory.Exists(DataPath))
+                Directory.CreateDirectory(DataPath);
+
             StartupHelper.CallInvokeOnStart();
             AddComponent<TestBehaviour>();
             Logging.LogInfo("SkylessAPI loaded successfully");

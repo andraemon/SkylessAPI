@@ -18,7 +18,7 @@ namespace SkylessAPI
     /// </summary>
     public static class ZenjectAPI
     {
-        public static MasterInstaller Installer;
+        public static MasterInstaller Installer { get; private set; }
 
         [InvokeOnStart]
         private static void Load()
@@ -36,7 +36,7 @@ namespace SkylessAPI
         /// Attempts to resolve an instance matching the given type.
         /// </summary>
         /// <typeparam name="T">The type to match against.</typeparam>
-        /// <returns>The resolved instance, or null if no match is found.</returns>
+        /// <returns>The resolved instance, or null if none is found.</returns>
         public static T ResolveInstance<T>() where T : class
             => Installer.Container.TryResolve<T>();
 

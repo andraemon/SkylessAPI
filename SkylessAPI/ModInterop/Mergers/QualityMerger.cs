@@ -160,7 +160,7 @@ namespace SkylessAPI.ModInterop.Mergers
                 LevelImageText = (string)item.GetPropertyValueOrDefault("LevelImageText"),
                 VariableDescriptionText = (string)item.GetPropertyValueOrDefault("VariableDescriptionText"),
                 Name = (string)item.GetPropertyValueOrDefault("Name", ""),
-                Id = item.Id(offset)
+                Id = item.Id(offset, false)
             };
         }
     }

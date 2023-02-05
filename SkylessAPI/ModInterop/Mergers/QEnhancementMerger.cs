@@ -39,7 +39,7 @@ namespace SkylessAPI.ModInterop.Mergers
             {
                 Level = (int)item.GetPropertyValueOrDefault("Level", 0),
                 AssociatedQuality = new Quality(item.GetProperty("AssociatedQuality").Id(offset)),
-                Id = item.Id(offset)
+                Id = item.Id(offset, false)
             };
         }
     }

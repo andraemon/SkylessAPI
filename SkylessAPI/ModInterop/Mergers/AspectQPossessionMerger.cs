@@ -37,7 +37,7 @@ namespace SkylessAPI.ModInterop.Mergers
                 CompletionMessage = (string)item.GetPropertyValueOrDefault("CompletionMessage"),
                 Level = (int)item.GetPropertyValueOrDefault("Level", 0),
                 AssociatedQuality = new Quality(item.GetProperty("AssociatedQuality").Id(offset)),
-                Id = item.Id(offset)
+                Id = item.Id(offset, false)
             };
         }
     }
