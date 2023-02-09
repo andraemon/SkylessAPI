@@ -38,5 +38,18 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public CompletionQRequirement Clone(CompletionQRequirement qRequirement)
+        {
+            return new CompletionQRequirement()
+            {
+                MinLevel = qRequirement.MinLevel,
+                MaxLevel = qRequirement.MaxLevel,
+                MinAdvanced = qRequirement.MinAdvanced,
+                MaxAdvanced = qRequirement.MaxAdvanced,
+                AssociatedQuality = qRequirement.AssociatedQuality,
+                Id = qRequirement.Id
+            };
+        }
     }
 }

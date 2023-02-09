@@ -55,5 +55,21 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Availability Clone(Availability availability)
+        {
+            return new Availability()
+            {
+                Quality = availability.Quality,
+                Cost = availability.Cost,
+                SellPrice = availability.SellPrice,
+                InShop = availability.InShop,
+                PurchaseQuality = availability.PurchaseQuality,
+                BuyMessage = availability.BuyMessage,
+                SellMessage = availability.SellMessage,
+                SaleDescription = availability.SaleDescription,
+                Id = availability.Id
+            };
+        }
     }
 }

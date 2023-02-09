@@ -94,5 +94,24 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Prospect Clone(Prospect prospect)
+        {
+            return new Prospect()
+            {
+                World = prospect.World,
+                Tags = prospect.Tags,
+                Description = prospect.Description,
+                Setting = prospect.Setting,
+                Request = prospect.Request,
+                Demand = prospect.Demand,
+                Payment = prospect.Payment,
+                QualitiesAffected = prospect.QualitiesAffected.ToList().Clone(ProspectQEffectMerger.Instance.Clone).ToIList(),
+                QualitiesRequired = prospect.QualitiesRequired.ToList().Clone(ProspectQRequirementMerger.Instance.Clone).ToIList(),
+                Completions = prospect.Completions.ToList().Clone(CompletionMerger.Instance.Clone).ToIList(),
+                Name = prospect.Name,
+                Id = prospect.Id
+            };
+        }
     }
 }

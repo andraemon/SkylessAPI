@@ -40,5 +40,21 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public AspectQPossession Clone(AspectQPossession qPossession)
+        {
+            return new AspectQPossession()
+            {
+                Quality = qPossession.Quality,
+                XP = qPossession.XP,
+                EffectiveLevelModifier = qPossession.EffectiveLevelModifier,
+                TargetQuality = qPossession.TargetQuality,
+                TargetLevel = qPossession.TargetLevel,
+                CompletionMessage = qPossession.CompletionMessage,
+                Level = qPossession.Level,
+                AssociatedQuality = qPossession.AssociatedQuality,
+                Id = qPossession.Id
+            };
+        }
     }
 }

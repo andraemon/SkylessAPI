@@ -50,5 +50,26 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public CompletionQEffect Clone(CompletionQEffect qEffect)
+        {
+            return new CompletionQEffect()
+            {
+                ForceEquip = qEffect.ForceEquip,
+                OnlyIfNoMoreThanAdvanced = qEffect.OnlyIfNoMoreThanAdvanced,
+                OnlyIfAtLeast = qEffect.OnlyIfAtLeast,
+                OnlyIfNoMoreThan = qEffect.OnlyIfNoMoreThan,
+                SetToExactlyAdvanced = qEffect.SetToExactlyAdvanced,
+                ChangeByAdvanced = qEffect.ChangeByAdvanced,
+                OnlyIfAtLeastAdvanced = qEffect.OnlyIfAtLeastAdvanced,
+                SetToExactly = qEffect.SetToExactly,
+                TargetQuality = qEffect.TargetQuality,
+                TargetLevel = qEffect.TargetLevel,
+                CompletionMessage = qEffect.CompletionMessage,
+                Level = qEffect.Level,
+                AssociatedQuality = qEffect.AssociatedQuality,
+                Id = qEffect.Id
+            };
+        }
     }
 }

@@ -69,5 +69,10 @@ namespace SkylessAPI.ModInterop.Mergers
         {
             throw new NotImplementedException();
         }
+
+        public BaseQEffect Clone(BaseQEffect qEffect)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

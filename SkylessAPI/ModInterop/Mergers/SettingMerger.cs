@@ -70,5 +70,26 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Setting Clone(Setting setting)
+        {
+            return new Setting()
+            {
+                World = setting.World,
+                OwnerName = setting.OwnerName,
+                Personae = setting.Personae,
+                StartingArea = setting.StartingArea,
+                StartingDomicile = setting.StartingDomicile,
+                ItemsUsableHere = setting.ItemsUsableHere,
+                Exchange = setting.Exchange,
+                TurnLengthSeconds = setting.TurnLengthSeconds,
+                MaxActionsAllowed = setting.MaxActionsAllowed,
+                MaxCardsAllowed = setting.MaxCardsAllowed,
+                ActionsInPeriodBeforeExhaustion = setting.ActionsInPeriodBeforeExhaustion,
+                Description = setting.Description,
+                Name = setting.Name,
+                Id = setting.Id
+            };
+        }
     }
 }

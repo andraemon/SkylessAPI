@@ -61,6 +61,45 @@ namespace SkylessAPI.Utilities
         }
 
         /// <summary>
+        /// Creates a <see cref="Dictionary{TKey, TValue}"/> from a <see cref="Il2CppSystem.Collections.Generic.List{T}"/> 
+        /// according to a specified key selector function.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key returned by <paramref name="keySelector"/>.</typeparam>
+        /// <typeparam name="T">The type of the elements of <paramref name="source"/>.</typeparam>
+        /// <param name="source">A list to create a dictionary from.</param>
+        /// <param name="keySelector">A function to extract a key from each element.</param>
+        /// <returns>A dictionary that contains values selected from the input sequence.</returns>
+        /// <exception cref="ArgumentException"><paramref name="keySelector"/> produces duplicate keys for two elements.</exception>
+        public static Dictionary<TKey, T> ToDictionary<TKey, T>(this Il2CppSystem.Collections.Generic.List<T> source, Func<T, TKey> keySelector)
+        {
+            var dict = new Dictionary<TKey, T>();
+
+            foreach (var item in source)
+            {
+                dict.Add(keySelector(item), item);
+            }
+
+            return dict;
+        }
+
+        /// <summary>
+        /// Creates a clone of a <see cref="Il2CppSystem.Collections.Generic.List{T}"/>, cloning each element with a specified cloning function.
+        /// </summary>
+        /// <typeparam name="T">The type of the elements of <paramref name="source"/>.</typeparam>
+        /// <param name="source">A list to clone.</param>
+        /// <param name="cloner">A function to clone each element.</param>
+        /// <returns>A list that contains values cloned from the input sequence.</returns>
+        public static Il2CppSystem.Collections.Generic.List<T> Clone<T>(this Il2CppSystem.Collections.Generic.List<T> source, Func<T, T> cloner)
+        {
+            var list = new Il2CppSystem.Collections.Generic.List<T>();
+
+            foreach (var item in source)
+                list.Add(cloner(item));
+
+            return list;
+        }
+
+        /// <summary>
         /// Converts an <see cref="IList{T}"/> to a <see cref="Il2CppSystem.Collections.Generic.List{T}"/>.
         /// </summary>
         /// <typeparam name="T">The type of the elements in the list.</typeparam>
@@ -103,8 +142,12 @@ namespace SkylessAPI.Utilities
         /// <typeparam name="T">The type of the elements in the list.</typeparam>
         /// <param name="iList">The list to convert.</param>
         /// <returns>The converted list.</returns>
-        public static Il2CppSystem.Collections.Generic.List<T> ToList<T> (this Il2CppSystem.Collections.Generic.IList<T> iList)
+        public static Il2CppSystem.Collections.Generic.List<T> ToList<T>(this Il2CppSystem.Collections.Generic.IList<T> iList)
         {
+            var tryCast = iList.TryCast<Il2CppSystem.Collections.Generic.List<T>>();
+
+            if (tryCast != null) return tryCast;
+
             var list = new Il2CppSystem.Collections.Generic.List<T>();
             for (int i = 0; i < iList.Cast<Il2CppSystem.Collections.Generic.ICollection<T>>().Count; i++)
             {
@@ -122,7 +165,7 @@ namespace SkylessAPI.Utilities
         /// <param name="offset">The offset of the mod from which the value originates.</param>
         /// <param name="checkTargetMod">Whether or not to check for a target mod.</param>
         /// <returns>The actual ID of the value.</returns>
-        internal static int Id(this JsonElement element, int offset, bool checkTargetMod = true)
+        internal static int Id(this JsonElement element, int offset = 0, bool checkTargetMod = true)
         {
             var id = element.GetProperty("Id").GetInt32();
 
@@ -147,7 +190,7 @@ namespace SkylessAPI.Utilities
         /// <returns>The value of the property or the default value.</returns>
         public static object GetPropertyValueOrDefault(this JsonElement element, string property, object @default = null)
         {
-            if (element.TryGetProperty(property, out JsonElement el))
+            if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(property, out JsonElement el))
             {
                 JsonValueKind valueKind = el.ValueKind;
 
@@ -171,7 +214,7 @@ namespace SkylessAPI.Utilities
         /// <returns>The property, or the default <see cref="JsonElement"/>.</returns>
         public static JsonElement GetPropertyOrDefault(this JsonElement element, string key)
         {
-            if (element.TryGetProperty(key, out JsonElement property))
+            if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(key, out JsonElement property))
             {
                 return property;
             }

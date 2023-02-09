@@ -46,5 +46,10 @@ namespace SkylessAPI.ModInterop.Mergers
         {
             throw new NotImplementedException();
         }
+
+        public BaseQRequirement Clone(BaseQRequirement qRequirement)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

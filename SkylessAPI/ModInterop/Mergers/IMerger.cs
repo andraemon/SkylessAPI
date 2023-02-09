@@ -12,5 +12,7 @@ namespace SkylessAPI.ModInterop.Mergers
         void Merge(T to, JsonElement from, int offset);
 
         T FromJsonElement(JsonElement item, int offset);
+
+        T Clone(T item);
     }
 }

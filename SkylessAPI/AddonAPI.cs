@@ -85,24 +85,24 @@ namespace SkylessAPI
             AddonsUpdated = AreAddonsUpdated();
 
             if (AddonsUpdated)
-            {
                 CalculateOffsets();
-                LoadOrder = GetLoadOrder();
-            }
-            else LoadOrder = new List<string>();
+
+            LoadOrder = GetLoadOrder();
 
             if (LoadOrder.Count > 0)
             {
                 SkylessAPI.Logging.LogDebug("Addon load order:");
                 LoadOrder.ForEach(s => SkylessAPI.Logging.LogDebug($" - {s}"));
 
-                ApplyPatches();
+                ApplyRepositoryPatches();
             }
+
+            ApplyCharacterPatches();
 
             SkylessAPI.Logging.LogInfo("Loaded AddonAPI");
         }
 
-        private static void ApplyPatches()
+        private static void ApplyRepositoryPatches()
         {
             SkylessAPI.Harmony.Patch(typeof(BinarySerializationService).GetMethod(nameof(BinarySerializationService.DeserializeAreasFromResources)),
                 postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Area_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
@@ -122,10 +122,11 @@ namespace SkylessAPI
                 postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Quality_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
             SkylessAPI.Harmony.Patch(typeof(BinarySerializationService).GetMethod(nameof(BinarySerializationService.DeserializeSettingsFromResources)),
                 postfix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(Setting_DeserializeCollectionPostfix), BindingFlags.Static | BindingFlags.NonPublic)));
+        }
 
+        private static void ApplyCharacterPatches() =>
             SkylessAPI.Harmony.Patch(typeof(CharacterRepository).GetMethod(nameof(CharacterRepository.LoadCharacter)),
                 prefix: new HarmonyMethod(typeof(AddonAPI).GetMethod(nameof(CleanupLineage), BindingFlags.Static | BindingFlags.NonPublic)));
-        }
 
         #region Helper Methods
         private static void FindAddonsForPlugins()
@@ -192,14 +193,14 @@ namespace SkylessAPI
 
         private static void CalculateOffsets()
         {
-            int maxId = ModIdCutoff;
+            int minUnoccupiedId = ModIdCutoff;
             foreach (var plugin in PluginManager.Plugins.Values)
             {
                 var addon = plugin.Addon;
 
                 addon.EstablishIdRange();
-                addon.IdOffset = maxId - addon.BaseModIDRange.Min;
-                maxId = addon.BaseModIDRange.Max + addon.IdOffset + 1;
+                addon.IdOffset = minUnoccupiedId - addon.BaseModIDRange.Min;
+                minUnoccupiedId = addon.BaseModIDRange.Max + addon.IdOffset + 1;
             }
         }
 
@@ -256,40 +257,40 @@ namespace SkylessAPI
 
         #region Postfixes
         [HarmonyPriority(Priority.First)]
-        private static Il2CppSystem.Collections.Generic.IList<Area> Area_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Area> __result) =>
-            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.AreaMerger.Instance, "areas").ToIl2CppList().ToIList();
+        private static Il2CppSystem.Collections.Generic.IList<Area> Area_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Area> __result)
+            => __result.MergeOrLoadRepos(ModInterop.Mergers.AreaMerger.Instance, "areas");
 
         [HarmonyPriority(Priority.First)]
-        private static Il2CppSystem.Collections.Generic.IList<Bargain> Bargain_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Bargain> __result) =>
-            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.BargainMerger.Instance, "bargains").ToIl2CppList().ToIList();
+        private static Il2CppSystem.Collections.Generic.IList<Bargain> Bargain_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Bargain> __result)
+            => __result.MergeOrLoadRepos(ModInterop.Mergers.BargainMerger.Instance, "bargains");
 
         [HarmonyPriority(Priority.First)]
-        private static Il2CppSystem.Collections.Generic.IList<Domicile> Domicile_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Domicile> __result) =>
-            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.DomicileMerger.Instance, "domiciles").ToIl2CppList().ToIList();
+        private static Il2CppSystem.Collections.Generic.IList<Domicile> Domicile_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Domicile> __result)
+            => __result.MergeOrLoadRepos(ModInterop.Mergers.DomicileMerger.Instance, "domiciles");
 
         [HarmonyPriority(Priority.First)]
-        private static Il2CppSystem.Collections.Generic.IList<Event> Event_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Event> __result) =>
-            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.EventMerger.Instance, "events").ToIl2CppList().ToIList();
+        private static Il2CppSystem.Collections.Generic.IList<Event> Event_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Event> __result)
+            => __result.MergeOrLoadRepos(ModInterop.Mergers.EventMerger.Instance, "events");
 
         [HarmonyPriority(Priority.First)]
-        private static Il2CppSystem.Collections.Generic.IList<Exchange> Exchange_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Exchange> __result) =>
-            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.ExchangeMerger.Instance, "exchanges").ToIl2CppList().ToIList();
+        private static Il2CppSystem.Collections.Generic.IList<Exchange> Exchange_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Exchange> __result)
+            => __result.MergeOrLoadRepos(ModInterop.Mergers.ExchangeMerger.Instance, "exchanges");
 
         [HarmonyPriority(Priority.First)]
-        private static Il2CppSystem.Collections.Generic.IList<Persona> Persona_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Persona> __result) =>
-            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.PersonaMerger.Instance, "personas").ToIl2CppList().ToIList();
+        private static Il2CppSystem.Collections.Generic.IList<Persona> Persona_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Persona> __result)
+            => __result.MergeOrLoadRepos(ModInterop.Mergers.PersonaMerger.Instance, "personas");
 
         [HarmonyPriority(Priority.First)]
-        private static Il2CppSystem.Collections.Generic.IList<Prospect> Prospect_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Prospect> __result) =>
-            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.ProspectMerger.Instance, "prospects").ToIl2CppList().ToIList();
+        private static Il2CppSystem.Collections.Generic.IList<Prospect> Prospect_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Prospect> __result)
+            => __result.MergeOrLoadRepos(ModInterop.Mergers.ProspectMerger.Instance, "prospects");
 
         [HarmonyPriority(Priority.First)]
-        private static Il2CppSystem.Collections.Generic.IList<Quality> Quality_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Quality> __result) =>
-            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.QualityMerger.Instance, "qualities").ToIl2CppList().ToIList();
+        private static Il2CppSystem.Collections.Generic.IList<Quality> Quality_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Quality> __result)
+            => __result.MergeOrLoadRepos(ModInterop.Mergers.QualityMerger.Instance, "qualities");
 
         [HarmonyPriority(Priority.First)]
-        private static Il2CppSystem.Collections.Generic.IList<Setting> Setting_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Setting> __result) =>
-            RepositoryMerger.MergeOrLoadRepos(__result.ToList().ToManagedList(), ModInterop.Mergers.SettingMerger.Instance, "settings").ToIl2CppList().ToIList();
+        private static Il2CppSystem.Collections.Generic.IList<Setting> Setting_DeserializeCollectionPostfix(Il2CppSystem.Collections.Generic.IList<Setting> __result)
+            => __result.MergeOrLoadRepos(ModInterop.Mergers.SettingMerger.Instance, "settings");
         #endregion
 
         // Move these to a class in ModInterop
@@ -326,8 +327,6 @@ namespace SkylessAPI
             public Addon(Dictionary<string, string> repos)
             {
                 Repos = repos;
-                IdOffset = 0;
-                BaseModIDRange = (-1, -1);
             }
 
             public void EstablishIdRange()

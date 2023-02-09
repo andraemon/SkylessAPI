@@ -43,5 +43,19 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Domicile Clone(Domicile domicile)
+        {
+            return new Domicile()
+            {
+                Name = domicile.Name,
+                Description = domicile.Description,
+                ImageName = domicile.ImageName,
+                MaxHandSize = domicile.MaxHandSize,
+                DefenceBonus = domicile.DefenceBonus,
+                World = domicile.World,
+                Id = domicile.Id
+            };
+        }
     }
 }

@@ -1,105 +1,137 @@
 ﻿using Failbetter.Core;
-using Failbetter.Core.DataInterfaces;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using Il2CppSystem.Linq;
+using SkylessAPI.ModInterop.Mergers;
 using SkylessAPI.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace SkylessAPI.ModInterop
 {
     internal static class RepositoryMerger
     {
-        public static List<T> MergeOrLoadRepos<T>(this List<T> baseRepo, Mergers.IMerger<T> merger, string slug) where T : Entity
+        public static Il2CppSystem.Collections.Generic.IList<T> MergeOrLoadRepos<T>
+            (this Il2CppSystem.Collections.Generic.IList<T> baseRepo, IMerger<T> merger, string slug) where T : Entity, new()
         {
-            var jsonSlug = slug + ".json";
             var path = Path.Combine(SkylessAPI.DataPath, slug + ".bytes");
 
             if (File.Exists(path) && !AddonAPI.AddonsUpdated)
             {
                 try
                 {
-                    var preMergedRepos = (List<T>)DeserializeBytes(slug);
-
-                    return preMergedRepos;
+                    return DeserializeBytes(slug).Cast<Il2CppSystem.Collections.Generic.IList<T>>();
                 }
                 catch (Exception e)
                 {
-                    SkylessAPI.Logging.LogWarning($"Merged repository {slug}.bytes is malformed, attempting to re-merge mods...");
+                    SkylessAPI.Logging.LogWarning($"Merged repository {slug}.bytes is malformed, re-merging addon repositories...");
                     SkylessAPI.Logging.LogDebug(e);
                 }
             }
 
-            foreach (string guid in AddonAPI.LoadOrder)
-            {
-                //var addon = AddonAPI.Addons[guid];
+            var repos = baseRepo.MergeRepos(merger, slug);
 
-                //if (addon.Repos.Contains(jsonSlug))
-                //{
-                //    var name = addon.Manifest.Name;
+            //foreach (string guid in AddonAPI.LoadOrder)
+            //{
+            //    var addon = AddonAPI.Addons[guid];
 
-                //    try
-                //    {
-                //        SkylessAPI.Logging.LogDebug($"Merging {name} {jsonSlug} to base...");
-                //        var modRepo = JsonSerializer.Deserialize<List<JsonElement>>
-                //            (File.ReadAllText(Path.Combine(addon.Directory, jsonSlug)), AddonAPI.JsonOptions);
+            //    if (addon.Repos.Contains(jsonSlug))
+            //    {
+            //        var name = addon.Manifest.Name;
 
-                //        baseRepo.MergeModRepoToBase(modRepo, merger, addon.IdOffset);
-                //        addon.Loaded = true;
-                //    }
-                //    catch (Exception e)
-                //    {
-                //        SkylessAPI.Logging.LogError($"Failed to load {name} when processing {jsonSlug}!");
-                //        SkylessAPI.Logging.LogError(e);
-                //    }
-                //}
-            }
+            //        try
+            //        {
+            //            SkylessAPI.Logging.LogDebug($"Merging {name} {jsonSlug} to base...");
+            //            var modRepo = JsonSerializer.Deserialize<List<JsonElement>>
+            //                (File.ReadAllText(Path.Combine(addon.Directory, jsonSlug)), AddonAPI.JsonOptions);
 
-            SerializeBytes(slug, baseRepo.ToIl2CppList().Cast<Il2CppSystem.Collections.Generic.IEnumerable<T>>());
+            //            baseRepo.MergeModRepoToBase(modRepo, merger, addon.IdOffset);
+            //            addon.Loaded = true;
+            //        }
+            //        catch (Exception e)
+            //        {
+            //            SkylessAPI.Logging.LogError($"Failed to load {name} when processing {jsonSlug}!");
+            //            SkylessAPI.Logging.LogError(e);
+            //        }
+            //    }
+            //}
+
+            if (AddonAPI.AddonsUpdated)
+                SerializeBytes(slug, baseRepo.Cast<Il2CppSystem.Collections.Generic.IEnumerable<T>>());
+
+            SkylessAPI.Logging.LogDebug("Merged repos");
 
             return baseRepo;
         }
 
-        public static void MergeModRepoToBase<T>(this List<T> listTo, List<JsonElement> listFrom, Mergers.IMerger<T> merger, int offset) where T : Entity
+        private static Il2CppSystem.Collections.Generic.IList<T> MergeRepos<T>
+            (this Il2CppSystem.Collections.Generic.IList<T> baseRepo, IMerger<T> merger, string slug) where T : Entity, new()
         {
-            var dictTo = listTo.ToDictionary(s => s.Id);
+            var baseRepoList = baseRepo.Cast<Il2CppSystem.Collections.Generic.List<T>>();
+
+            return baseRepo;
+        }
+
+        private static bool TryMergeModToBase<T>(this Il2CppSystem.Collections.Generic.List<T> listTo, 
+            List<JsonElement> listFrom, IMerger<T> merger, int offset) where T : Entity, new()
+        {
+            Dictionary<int, T> dictTo;
+            var changes = new Dictionary<int, T>();
+            var sourcePlugin = PluginManager.Plugins.Values.First(s => s.Addon?.IdOffset == offset);
+
+            try
+            {
+                dictTo = listTo.ToDictionary(e => e.Id);
+            }
+            catch (ArgumentException)
+            {
+                SkylessAPI.Logging.LogWarning($"Two or more entities in the base repository share the same ID.");
+                return false;
+            }
 
             foreach (var itemFrom in listFrom)
             {
-                var id = itemFrom.GetProperty("Id").GetInt32();
+                if (!itemFrom.TryGetID(out int id))
+                    return false;
+
                 if (id < AddonAPI.ModIdCutoff)
                 {
-                    var itemTo = dictTo[id];
-                    if (itemFrom.TryGetProperty("Command", out JsonElement command))
+                    if (!dictTo.TryProcessVanillaItem(itemFrom, merger, offset, out var item))
+                        return false;
+
+                    if (changes.ContainsKey(id))
                     {
-                        var cmdStr = command.GetString();
-                        if (cmdStr == "Remove")
-                        {
-                            listTo.Remove(itemTo);
-                            SkylessAPI.Logging.LogDebug($" | Removed vanilla item with ID {itemTo}");
-                        }
-                        else if (cmdStr == "Merge")
-                        {
-                            merger.Merge(itemTo, itemFrom, offset);
-                            SkylessAPI.Logging.LogDebug($" | Merged modded and vanilla items with ID {id}");
-                        }
+                        SkylessAPI.Logging.LogWarning($"Two or more entities in the addon repository share the ID {id}.");
+                        return false;
                     }
-                    else
-                    {
-                        merger.Merge(itemTo, itemFrom, offset);
-                        SkylessAPI.Logging.LogDebug($" | Merged modded and vanilla items with ID {id}");
-                    }
+
+                    changes.Add(id, item);
                 }
                 else
                 {
-                    if (itemFrom.TryGetProperty("TargetMod", out JsonElement targetMod))
+                    var targetGuid = itemFrom.GetPropertyValueOrDefault("TargetMod")?.ToString();
+
+                    if (targetGuid != null)
                     {
-                        var targetModGuid = targetMod.GetString();
+                        if (!AddonAPI.IsLoaded(targetGuid))
+                        {
+                            if (sourcePlugin.Manifest.HardDependencies.Contains(targetGuid))
+                            {
+                                SkylessAPI.Logging.LogWarning($"Hard dependency {targetGuid} is not loaded.");
+                                return false;
+                            }
+                            else
+                            {
+                                SkylessAPI.Logging.LogDebug($" | Didn't process item with ID {id}; soft dependency {targetGuid} not loaded");
+                                continue;
+                            }
+                        }
+                    }
+
+                    if (itemFrom.TryGetProperty("TargetMod", out JsonElement targetMod2))
+                    {
+                        var targetModGuid = targetMod2.GetString();
 
                         if (AddonAPI.IsLoaded(targetModGuid))
                         {
@@ -135,74 +167,179 @@ namespace SkylessAPI.ModInterop
                     }
                 }
             }
+
+            return true;
         }
 
-        public static Il2CppSystem.Collections.Generic.List<T> HandleListMerge<T>(Il2CppSystem.Collections.Generic.List<T> listTo, JsonElement listFrom, 
-            Mergers.IMerger<T> merger, int offset) where T : Entity
+        #region Helper Methods
+        private static bool TryGetID(this JsonElement element, out int id)
         {
-            if (listTo != null)
+            if (element.ValueKind == JsonValueKind.Object)
             {
-                if (listFrom.ValueKind != JsonValueKind.Undefined)
+                if (element.TryGetProperty("Id", out var idProperty))
                 {
-                    var managedList = listTo.ToManagedList();
-
-                    managedList.MergeModRepoToBase(listFrom.GetList(), merger, offset);
-
-                    return managedList.ToIl2CppList();
+                    if (idProperty.TryGetInt32(out id))
+                        return true;
+                    else SkylessAPI.Logging.LogWarning($"An entity has an invalid ID {element.GetPropertyValueOrDefault("Id")}.");
                 }
-
-                return listTo;
+                else SkylessAPI.Logging.LogWarning("An entity is missing an ID.");
             }
-            if (listFrom.ValueKind != JsonValueKind.Undefined)
-            {
-                var listFromElements = listFrom.GetList(); 
-                var newList = new Il2CppSystem.Collections.Generic.List<T>();
-                for (int i = 0; i < listFromElements.Count; i++)
-                {
-                    newList.Add(merger.FromJsonElement(listFromElements[i], offset));
-                }
-                return newList;
-            }
+            else SkylessAPI.Logging.LogWarning("An item is not a valid entity.");
 
-            return new Il2CppSystem.Collections.Generic.List<T>();
+            id = 0;
+            return false;
         }
 
-        private static object DeserializeBytes(string slug)
+        private static bool TryProcessVanillaItem<T>(this Dictionary<int, T> dictTo, JsonElement itemFrom, IMerger<T> merger, int offset, out T item) where T : Entity, new()
+        {
+            item = null;
+            var id = itemFrom.Id(checkTargetMod: false);
+
+            if (!dictTo.TryGetValue(id, out T itemTo))
+            {
+                SkylessAPI.Logging.LogWarning($"Could not find vanilla entity with ID {id}.");
+                return false;
+            }
+
+            var command = itemFrom.GetPropertyValueOrDefault("Command")?.ToString();
+
+            if (command != null)
+            {
+                var conditional = SatisfiesConditional(itemFrom, id, command, offset);
+
+                if (conditional == false)
+                {
+                    item = new T() { Id = -1 };
+                    return true;
+                }
+                if (conditional == null) return false;
+
+                if (command.Contains("Remove"))
+                {
+                    SkylessAPI.Logging.LogDebug($" | Removed vanilla item with ID {id}");
+                    return true;
+                }
+                if (command.Contains("Merge"))
+                {
+                    var clone2 = merger.Clone(itemTo);
+
+                    if (TryMerge(clone2, itemFrom, merger, offset))
+                    {
+                        SkylessAPI.Logging.LogDebug($" | Merged modded and vanilla items with ID {id}");
+                        item = clone2;
+                        return true;
+                    }
+
+                    SkylessAPI.Logging.LogWarning($"Error when merging entity with ID {id}.");
+                    return false;
+                }
+
+                SkylessAPI.Logging.LogWarning($"Unrecognized command {command} on entity with ID {id}.");
+                return false;
+            }
+
+            var clone = merger.Clone(itemTo);
+
+            if (TryMerge(clone, itemFrom, merger, offset))
+            {
+                SkylessAPI.Logging.LogDebug($" | Merged modded and vanilla items with ID {id}");
+                item = clone;
+                return true;
+            }
+
+            SkylessAPI.Logging.LogWarning($"Error when merging entity with ID {id}.");
+            return false;
+        }
+
+        private static bool TryProcessModdedItem<T>(this Dictionary<int, T> itemTo, JsonElement itemFrom, IMerger<T> merger, int offset, out T item) where T : Entity
+        {
+            item = null;
+            return false;
+        }
+
+        private static bool TryMerge<T>(T itemTo, JsonElement itemFrom, IMerger<T> merger, int offset) where T : Entity
+        {
+            try
+            {
+                merger.Merge(itemTo, itemFrom, offset);
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                SkylessAPI.Logging.LogDebug($"Error when merging entities with ID {itemTo.Id}:\n{e}");
+                return false;
+            }
+        }
+
+        private static bool? SatisfiesConditional(JsonElement itemFrom, int id, string command, int offset)
+        {
+            if (command.Contains("Conditional"))
+            {
+                var guid = itemFrom.GetPropertyValueOrDefault("TargetMod", string.Empty)?.ToString();
+
+                if (guid == string.Empty)
+                {
+                    SkylessAPI.Logging.LogWarning($"Conditional command on entity with ID {id} is missing a target mod.");
+                    return null;
+                }
+                if (guid != null)
+                {
+                    if (PluginManager.Plugins.Values.First(s => s.Addon?.IdOffset == offset).Manifest.Dependencies.Contains(guid))
+                    {
+                        if (!AddonAPI.IsLoaded(guid))
+                        {
+                            SkylessAPI.Logging.LogDebug($" | Didn't process item with ID {id}; soft dependency {guid} not loaded");
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        SkylessAPI.Logging.LogWarning($"Unrecognized dependency {guid} on entity with ID {id}.");
+                        return null;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private static Il2CppSystem.Object DeserializeBytes(string slug)
         {
             var stream = Il2CppSystem.IO.File.OpenRead(Path.Combine(SkylessAPI.DataPath, slug + ".bytes"));
             var reader = new Il2CppSystem.IO.BinaryReader(stream);
-            object repo = null;
+            Il2CppSystem.Object repo = null;
 
             try
             {
                 switch (slug)
                 {
                     case "areas":
-                        repo = BinarySerializer.BinarySerializer_Area.DeserializeCollection(reader).ToManagedList();
+                        repo = BinarySerializer.BinarySerializer_Area.DeserializeCollection(reader);
                         break;
                     case "bargains":
-                        repo = BinarySerializer.BinarySerializer_Bargain.DeserializeCollection(reader).ToManagedList();
+                        repo = BinarySerializer.BinarySerializer_Bargain.DeserializeCollection(reader);
                         break;
                     case "domiciles":
-                        repo = BinarySerializer.BinarySerializer_Domicile.DeserializeCollection(reader).ToManagedList();
+                        repo = BinarySerializer.BinarySerializer_Domicile.DeserializeCollection(reader);
                         break;
                     case "events":
-                        repo = BinarySerializer.BinarySerializer_Event.DeserializeCollection(reader).ToManagedList();
+                        repo = BinarySerializer.BinarySerializer_Event.DeserializeCollection(reader);
                         break;
                     case "exchanges":
-                        repo = BinarySerializer.BinarySerializer_Exchange.DeserializeCollection(reader).ToManagedList();
+                        repo = BinarySerializer.BinarySerializer_Exchange.DeserializeCollection(reader);
                         break;
                     case "personas":
-                        repo = BinarySerializer.BinarySerializer_Persona.DeserializeCollection(reader).ToManagedList();
+                        repo = BinarySerializer.BinarySerializer_Persona.DeserializeCollection(reader);
                         break;
                     case "prospects":
-                        repo = BinarySerializer.BinarySerializer_Prospect.DeserializeCollection(reader).ToManagedList();
+                        repo = BinarySerializer.BinarySerializer_Prospect.DeserializeCollection(reader);
                         break;
                     case "qualities":
-                        repo = BinarySerializer.BinarySerializer_Quality.DeserializeCollection(reader).ToManagedList();
+                        repo = BinarySerializer.BinarySerializer_Quality.DeserializeCollection(reader);
                         break;
                     case "settings":
-                        repo = BinarySerializer.BinarySerializer_Setting.DeserializeCollection(reader).ToManagedList();
+                        repo = BinarySerializer.BinarySerializer_Setting.DeserializeCollection(reader);
                         break;
                 }
             }
@@ -260,6 +397,37 @@ namespace SkylessAPI.ModInterop
                 stream?.Dispose();
                 writer?.Dispose();
             }
+        }
+        #endregion
+
+        public static Il2CppSystem.Collections.Generic.List<T> HandleListMerge<T>(Il2CppSystem.Collections.Generic.List<T> listTo, JsonElement listFrom, 
+            IMerger<T> merger, int offset) where T : Entity
+        {
+            if (listTo != null)
+            {
+                if (listFrom.ValueKind != JsonValueKind.Undefined)
+                {
+                    var managedList = listTo.ToManagedList();
+
+                    // managedList.TryMergeModToBase(listFrom.GetList(), merger, offset);
+
+                    return managedList.ToIl2CppList();
+                }
+
+                return listTo;
+            }
+            if (listFrom.ValueKind != JsonValueKind.Undefined)
+            {
+                var listFromElements = listFrom.GetList(); 
+                var newList = new Il2CppSystem.Collections.Generic.List<T>();
+                for (int i = 0; i < listFromElements.Count; i++)
+                {
+                    newList.Add(merger.FromJsonElement(listFromElements[i], offset));
+                }
+                return newList;
+            }
+
+            return new Il2CppSystem.Collections.Generic.List<T>();
         }
 
         private class RepoSerializationException : Exception

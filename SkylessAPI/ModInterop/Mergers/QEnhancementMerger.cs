@@ -42,5 +42,15 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public QEnhancement Clone(QEnhancement qEnhancement)
+        {
+            return new QEnhancement()
+            {
+                Level = qEnhancement.Level,
+                AssociatedQuality = qEnhancement.AssociatedQuality,
+                Id = qEnhancement.Id
+            };
+        }
     }
 }

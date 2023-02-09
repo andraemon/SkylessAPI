@@ -1,6 +1,7 @@
 ﻿using Failbetter.Core;
 using Failbetter.Core.Provider;
 using SkylessAPI.Utilities;
+using System;
 using System.Text.Json;
 
 namespace SkylessAPI.ModInterop.Mergers
@@ -66,6 +67,34 @@ namespace SkylessAPI.ModInterop.Mergers
                 ActionCost = (int)item.GetPropertyValueOrDefault("ActionCost", 0),
                 Name = ((string)item.GetPropertyValueOrDefault("Name")).ReplaceModIDsInTokens(offset),
                 Id = item.Id(offset, false)
+            };
+        }
+
+        public Branch Clone(Branch branch)
+        {
+            return new Branch()
+            {
+                SuccessEvent = EventMerger.Instance.Clone(branch.SuccessEvent),
+                DefaultEvent = EventMerger.Instance.Clone(branch.DefaultEvent),
+                RareDefaultEvent = EventMerger.Instance.Clone(branch.RareDefaultEvent),
+                RareDefaultEventChance = branch.RareDefaultEventChance,
+                RareSuccessEvent = EventMerger.Instance.Clone(branch.RareSuccessEvent),
+                RareSuccessEventChance = branch.RareSuccessEventChance,
+                ParentEvent = branch.ParentEvent,
+                QualitiesRequired = branch.QualitiesRequired.ToList().Clone(BranchQRequirementMerger.Instance.Clone).ToIList(),
+                Image = branch.Image,
+                Description = branch.Description,
+                OwnerName = branch.OwnerName,
+                DateTimeCreated = branch.DateTimeCreated,
+                CurrencyCost = branch.CurrencyCost,
+                Archived = branch.Archived,
+                RenameQualityCategory = branch.RenameQualityCategory,
+                ButtonText = branch.ButtonText,
+                Ordering = branch.Ordering,
+                Act = branch.Act,
+                ActionCost = branch.ActionCost,
+                Name = branch.Name,
+                Id = branch.Id
             };
         }
 

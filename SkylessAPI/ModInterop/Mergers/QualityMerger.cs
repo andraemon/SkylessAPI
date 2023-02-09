@@ -163,5 +163,54 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Quality Clone(Quality quality)
+        {
+            return new Quality()
+            {
+                QualitiesPossessedList = quality.QualitiesPossessedList.ToList().Clone(AspectQPossessionMerger.Instance.Clone).ToIList(),
+                RelationshipCapable = quality.RelationshipCapable,
+                PluralName = quality.PluralName,
+                OwnerName = quality.OwnerName,
+                Description = quality.Description,
+                Image = quality.Image,
+                Notes = quality.Notes,
+                Tag = quality.Tag,
+                Cap = quality.Cap,
+                CapAdvanced = quality.CapAdvanced,
+                HimbleLevel = quality.HimbleLevel,
+                UsePyramidNumbers = quality.UsePyramidNumbers,
+                PyramidNumberIncreaseLimit = quality.PyramidNumberIncreaseLimit,
+                AvailableAt = quality.AvailableAt,
+                PreventNaming = quality.PreventNaming,
+                CssClasses = quality.CssClasses,
+                QEffectPriority = quality.QEffectPriority,
+                QEffectMinimalLimit = quality.QEffectMinimalLimit,
+                World = quality.World,
+                Ordering = quality.Ordering,
+                IsSlot = quality.IsSlot,
+                LimitedToArea = quality.LimitedToArea,
+                AssignToSlot = quality.AssignToSlot,
+                ParentQuality = quality.ParentQuality,
+                Persistent = quality.Persistent,
+                Visible = quality.Visible,
+                Enhancements = quality.Enhancements.ToList().Clone(QEnhancementMerger.Instance.Clone).ToIList(),
+                EnhancementsDescription = quality.EnhancementsDescription,
+                SecondChanceQuality = quality.SecondChanceQuality,
+                UseEvent = quality.UseEvent,
+                DifficultyTestType = quality.DifficultyTestType,
+                DifficultyScaler = quality.DifficultyScaler,
+                AllowedOn = quality.AllowedOn,
+                Nature = quality.Nature,
+                Category = quality.Category,
+                LevelDescriptionText = quality.LevelDescriptionText,
+                ChangeDescriptionText = quality.ChangeDescriptionText,
+                DescendingChangeDescriptionText = quality.DescendingChangeDescriptionText,
+                LevelImageText = quality.LevelImageText,
+                VariableDescriptionText = quality.VariableDescriptionText,
+                Name = quality.Name,
+                Id = quality.Id
+            };
+        }
     }
 }

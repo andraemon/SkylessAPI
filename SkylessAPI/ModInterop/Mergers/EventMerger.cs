@@ -281,5 +281,52 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Event Clone(Event @event)
+        {
+            return new Event()
+            {
+                ChildBranches = @event.ChildBranches.ToList().Clone(BranchMerger.Instance.Clone).ToIList(),
+                ParentBranch = @event.ParentBranch,
+                QualitiesAffected = @event.QualitiesAffected.ToList().Clone(EventQEffectMerger.Instance.Clone).ToIList(),
+                QualitiesRequired = @event.QualitiesRequired.Clone(EventQRequirementMerger.Instance.Clone),
+                Image = @event.Image,
+                SecondImage = @event.SecondImage,
+                Description = @event.Description,
+                Tag = @event.Tag,
+                ExoticEffects = @event.ExoticEffects,
+                Note = @event.Note,
+                ChallengeLevel = @event.ChallengeLevel,
+                UnclearedEditAt = @event.UnclearedEditAt,
+                LastEditedBy = @event.LastEditedBy,
+                Ordering = @event.Ordering,
+                ShowAsMessage = @event.ShowAsMessage,
+                LivingStory = @event.LivingStory,
+                LinkToEvent = @event.LinkToEvent,
+                Deck = @event.Deck,
+                Category = @event.Category,
+                LimitedToArea = @event.LimitedToArea,
+                World = @event.World,
+                Transient = @event.Transient,
+                Stickiness = @event.Stickiness,
+                MoveToAreaId = @event.MoveToAreaId,
+                MoveToArea = @event.MoveToArea,
+                MoveToDomicile = @event.MoveToDomicile,
+                SwitchToSetting = @event.SwitchToSetting,
+                FatePointsChange = @event.FatePointsChange,
+                BootyValue = @event.BootyValue,
+                LogInJournalAgainstQuality = @event.LogInJournalAgainstQuality,
+                Setting = @event.Setting,
+                Urgency = @event.Urgency,
+                Teaser = @event.Teaser,
+                OwnerName = @event.OwnerName,
+                DateTimeCreated = @event.DateTimeCreated,
+                Distribution = @event.Distribution,
+                Autofire = @event.Autofire,
+                CanGoBack = @event.CanGoBack,
+                Name = @event.Name,
+                Id = @event.Id
+            };
+        }
     }
 }

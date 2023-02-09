@@ -43,5 +43,10 @@ namespace SkylessAPI.ModInterop.Mergers
         {
             throw new NotImplementedException();
         }
+
+        public BaseQPossession Clone(BaseQPossession qPossession)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

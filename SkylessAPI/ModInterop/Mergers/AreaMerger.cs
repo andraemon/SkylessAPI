@@ -76,5 +76,26 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Area Clone(Area area)
+        {
+            return new Area()
+            {
+                Description = area.Description,
+                ImageName = area.ImageName,
+                World = area.World,
+                MarketAccessPermitted = area.MarketAccessPermitted,
+                MoveMessage = area.MoveMessage,
+                HideName = area.HideName,
+                RandomPostcard = area.RandomPostcard,
+                MapX = area.MapX,
+                MapY = area.MapY,
+                UnlocksWithQuality = area.UnlocksWithQuality,
+                ShowOps = area.ShowOps,
+                PremiumSubRequired = area.PremiumSubRequired,
+                Name = area.Name,
+                Id = area.Id
+            };
+        }
     }
 }

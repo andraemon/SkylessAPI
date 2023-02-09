@@ -57,5 +57,20 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Shop Clone(Shop shop)
+        {
+            return new Shop()
+            {
+                Name = shop.Name,
+                Image = shop.Image,
+                Description = shop.Image,
+                Ordering = shop.Ordering,
+                Exchange = shop.Exchange,
+                Availabilities = shop.Availabilities.ToList().Clone(AvailabilityMerger.Instance.Clone).ToIList(),
+                QualitiesRequired = shop.QualitiesRequired.ToList().Clone(ShopQRequirementMerger.Instance.Clone).ToIList(),
+                Id = shop.Id
+            };
+        }
     }
 }

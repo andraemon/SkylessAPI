@@ -57,5 +57,10 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Deck Clone(Deck deck)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

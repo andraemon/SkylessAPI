@@ -1,12 +1,8 @@
 ﻿using Failbetter.Core;
-using Failbetter.Core.QAssoc.BaseClasses;
+using Il2CppSystem.Collections.Generic;
 using SkylessAPI.Utilities;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace SkylessAPI.ModInterop.Mergers
 {
@@ -71,6 +67,23 @@ namespace SkylessAPI.ModInterop.Mergers
                 QualitiesRequired = qualitiesRequired,
                 Name = ((string)item.GetPropertyValueOrDefault("Name")).ReplaceModIDsInTokens(offset),
                 Id = item.Id(offset, false)
+            };
+        }
+
+        public Bargain Clone(Bargain bargain)
+        {
+            return new Bargain()
+            {
+                World = bargain.World,
+                Tags = bargain.Tags,
+                Description = bargain.Description,
+                Offer = bargain.Offer,
+                Stock = bargain.Stock,
+                Price = bargain.Price,
+                QualitiesRequired = bargain.QualitiesRequired.ToList().Clone(BargainQRequirementMerger.Instance.Clone).ToIList(),
+                Teaser = bargain.Teaser,
+                Name = bargain.Name,
+                Id = bargain.Id
             };
         }
     }

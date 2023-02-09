@@ -23,12 +23,12 @@ namespace SkylessAPI.ModInterop.Mergers
             }
         }
 
-        public void Merge(ProspectQRequirement eventQTo, JsonElement eventQFrom, int offset)
+        public void Merge(ProspectQRequirement prospectQTo, JsonElement prospectQFrom, int offset)
         {
-            BaseQRequirementMerger.Instance.Merge(eventQTo, eventQFrom, offset);
+            BaseQRequirementMerger.Instance.Merge(prospectQTo, prospectQFrom, offset);
 
-            eventQTo.CustomLockedMessage = (string)eventQFrom.GetPropertyValueOrDefault("CustomLockedMessage", eventQTo.CustomLockedMessage);
-            eventQTo.CustomUnlockedMessage = (string)eventQFrom.GetPropertyValueOrDefault("CustomUnlockedMessage", eventQTo.CustomUnlockedMessage);
+            prospectQTo.CustomLockedMessage = (string)prospectQFrom.GetPropertyValueOrDefault("CustomLockedMessage", prospectQTo.CustomLockedMessage);
+            prospectQTo.CustomUnlockedMessage = (string)prospectQFrom.GetPropertyValueOrDefault("CustomUnlockedMessage", prospectQTo.CustomUnlockedMessage);
         }
 
         public ProspectQRequirement FromJsonElement(JsonElement item, int offset)
@@ -41,6 +41,22 @@ namespace SkylessAPI.ModInterop.Mergers
                 MaxAdvanced = ((string)item.GetPropertyValueOrDefault("MaxAdvanced")).ReplaceModIDsInTokens(offset),
                 AssociatedQuality = new Quality(item.GetProperty("AssociatedQuality").Id(offset)),
                 Id = item.Id(offset, false)
+            };
+        }
+
+        public ProspectQRequirement Clone(ProspectQRequirement qRequirement)
+        {
+            return new ProspectQRequirement()
+            {
+                Prospect = qRequirement.Prospect,
+                CustomLockedMessage = qRequirement.CustomLockedMessage,
+                CustomUnlockedMessage = qRequirement.CustomUnlockedMessage,
+                MinLevel = qRequirement.MinLevel,
+                MaxLevel = qRequirement.MaxLevel,
+                MinAdvanced = qRequirement.MinAdvanced,
+                MaxAdvanced = qRequirement.MaxAdvanced,
+                AssociatedQuality = qRequirement.AssociatedQuality,
+                Id = qRequirement.Id
             };
         }
     }

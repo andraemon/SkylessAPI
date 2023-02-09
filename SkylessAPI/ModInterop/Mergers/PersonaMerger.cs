@@ -78,5 +78,20 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Persona Clone(Persona persona)
+        {
+            return new Persona()
+            {
+                QualitiesAffected = persona.QualitiesAffected.ToList().Clone(PersonaQEffectMerger.Instance.Clone).ToIList(),
+                QualitiesRequired = persona.QualitiesRequired.ToList().Clone(PersonaQRequirementMerger.Instance.Clone).ToIList(),
+                Description = persona.Description,
+                OwnerName = persona.OwnerName,
+                Setting = persona.Setting,
+                DateTimeCreated = persona.DateTimeCreated,
+                Name = persona.Name,
+                Id = persona.Id
+            };
+        }
     }
 }

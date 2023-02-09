@@ -50,5 +50,19 @@ namespace SkylessAPI.ModInterop.Mergers
                 Id = item.Id(offset, false)
             };
         }
+
+        public Exchange Clone(Exchange exchange)
+        {
+            return new Exchange()
+            {
+                Name = exchange.Name,
+                Image = exchange.Image,
+                Title = exchange.Title,
+                Description = exchange.Description,
+                Shops = exchange.Shops.ToList().Clone(ShopMerger.Instance.Clone).ToIList(),
+                SettingIds = exchange.SettingIds,
+                Id = exchange.Id
+            };
+        }
     }
 }
